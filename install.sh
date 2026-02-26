@@ -36,6 +36,7 @@ if [ -d "$TARGET_DIR" ]; then
         UPDATE_NEEDED=false
     else
         echo "[+] New changes detected. Updating..."
+        git checkout .
         git pull
         UPDATE_NEEDED=true
     fi
