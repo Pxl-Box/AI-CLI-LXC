@@ -25,13 +25,22 @@ A sleek, modern web-based wrapper around local terminal tools, specialized for r
 In Proxmox, create a new container using the Ubuntu 24.04 template. Ensure it has an IP address on your network.
 
 ### 2. Run the Helper Install Script
-Once your LXC is running and connected to the internet, SSH into it and run the automatic one-line installer. 
+Once your LXC is running and connected to the internet, SSH into it and run the installer.
 
-> **Note:** Before running, you must open `install.sh` and change `YOUR_GITHUB_USERNAME` to your actual GitHub username where you pushed this repository!
-
+**Option A: If your repository is Public:**
 ```bash
 # In your Proxmox LXC:
-bash <(curl -s https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/AI-CLI-LXC/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/install.sh)
+```
+
+**Option B: If your repository is Private (or not pushed yet):**
+You will need to pass a GitHub Personal Access Token (PAT) so the LXC can authorize the curl request and the git clone.
+```bash
+# Set your token as a variable
+export GITHUB_TOKEN="ghp_YourPersonalAccessTokenGoesHere"
+
+# Curl the script using the token, and the script will also use the token to clone
+bash <(curl -H "Authorization: token $GITHUB_TOKEN" -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/install.sh)
 ```
 
 This script will automatically:
