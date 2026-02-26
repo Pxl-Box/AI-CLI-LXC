@@ -111,24 +111,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-commit').addEventListener('click', () => {
-        if (activeAI === 'gemini') {
-            sendCommand('/commit');
-        } else if (activeAI === 'claude') {
+        if (activeAI === 'gemini' || activeAI === 'claude') {
+            // User requested /init for both so they share the exact same context file structure
             sendCommand('/init');
         } else {
-            // Default fallback if they just typed the command instead of clicking
-            alert("Please start Gemini or Claude using the Launchers first so the workspace knows which command to send!");
+            alert("Please start Gemini or Claude using the Launchers first!");
             term.focus();
         }
     });
 
     document.getElementById('btn-clear').addEventListener('click', () => {
-        // Clear terminal output but also send the actual clear command to OS
         const os = navigator.userAgent.toLowerCase();
         if (os.includes('win')) {
-            sendCommand('clear'); // Windows powershell sometimes accepts clear, or we can just run it
+            sendCommand('clear');
         } else {
             sendCommand('clear');
         }
+    });
+
+    // --- Settings Modal Logic --- //
+    const settingsModal = document.getElementById('settings-modal');
+    const inputCwd = document.getElementById('input-cwd');
+    const displayCwd = document.getElementById('current-dir');
+
+    document.getElementById('btn-settings').addEventListener('click', () => {
+        settingsModal.classList.add('active');
+        inputCwd.focus();
+    });
+
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+        settingsModal.classList.remove('active');
+        term.focus();
+    });
+
+    // Close on background click
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.classList.remove('active');
+            term.focus();
+        }
+    });
+
+    // Handle CWD Apply
+    const applyCwd = () => {
+        const newCwd = inputCwd.value.trim();
+        if (newCwd) {
+            socket.emit('terminal.changeCwd', newCwd);
+            displayCwd.textContent = newCwd.split('/').pop() || newCwd;
+            settingsModal.classList.remove('active');
+            term.focus();
+        }
+    };
+
+    document.getElementById('btn-apply-cwd').addEventListener('click', applyCwd);
+    inputCwd.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyCwd();
+    });
+
+    // Handle Restart Term
+    document.getElementById('btn-restart-term').addEventListener('click', () => {
+        socket.emit('terminal.restart');
+        settingsModal.classList.remove('active');
+        term.focus();
     });
 });

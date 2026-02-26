@@ -23,13 +23,23 @@
 <body>
 
     <div class="workspace-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>AI Workspace</h2>
+                <div class="header-title">
+                    <h2>AI Workspace</h2>
+                    <button id="btn-settings" class="icon-btn" title="Workspace Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
                 <div class="status-indicator">
                     <span class="dot online"></span>
                     <span class="status-text">Connected</span>
+                    <span class="cwd-text" id="current-dir">~</span>
                 </div>
             </div>
 
@@ -94,6 +104,30 @@
             </div>
             <div id="terminal-container"></div>
         </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Workspace Settings</h3>
+                <button class="close-btn" id="btn-close-settings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="input-cwd">Change Working Directory</label>
+                    <p class="help-text">Enter the absolute path to your project folder where you want to run
+                        Gemini/Claude (e.g., /opt/my-project)</p>
+                    <div class="input-row">
+                        <input type="text" id="input-cwd" placeholder="/path/to/project" autocomplete="off">
+                        <button class="action-btn primary small" id="btn-apply-cwd">Apply</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button class="action-btn danger small" id="btn-restart-term">Force Restart Terminal</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
