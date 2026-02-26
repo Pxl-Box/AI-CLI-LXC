@@ -30,6 +30,7 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **Multi-Tab Terminal Support:** Implemented a full tab-based interface for the web terminal.
 - **UI & Aesthetic Refinements:** Added model usage statistics, glassmorphism sidebar elements, and cache-busting versioning (v1.1) to ensure frontend updates are immediately visible.
 - **Optimized Deployment (Soft Update):** Enhanced `setup-lxc.sh` with a forced `pm2 restart` cycle and cache-bust instructions.
+- **Robustness & Update Integrity:** Updated `install.sh` to include `git checkout .` before pulling, ensuring the front-end definitely updates even if minor local modifications exist in the deployment folder.
 - **Scrolling & Layout Fixes:** Refined terminal container CSS and increased `fitAddon` timeouts to 50ms to resolve intermittent scrolling and sizing issues.
 - **Session Persistence & Isolation:** Enhanced `server.js` to manage a map of PTY processes per client.
 --- End of Recent Progress ---

@@ -189,16 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Simulate activity in the usage bars
         const activeTabEl = document.querySelector('.tab.active .tab-title');
         const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
+        
         if (title.includes('gemini')) {
-            updateUsageBar('gemini', 15);
+            if (title.includes('3')) {
+                updateUsageBar('gemini-3', 20);
+            } else if (title.includes('2.5')) {
+                updateUsageBar('gemini-2-5', 15);
+            }
         } else if (title.includes('claude')) {
             updateUsageBar('claude', 25);
         }
     };
 
     const updateUsageBar = (type, increment) => {
-        const item = type === 'gemini' ? 0 : 1;
-        const fill = document.querySelectorAll('.usage-fill')[item];
+        const fill = document.getElementById(`usage-${type}`);
         if (fill) {
             let width = parseInt(fill.style.width) || 0;
             width = Math.min(100, width + increment);
@@ -213,9 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Helper to start AI in a specific tab
-    const startAI = (aiName, path, color) => {
+    const startAI = (aiName, path, color, model = null) => {
         const id = `${aiName}-${Math.random().toString(36).substr(2, 5)}`;
-        const title = aiName.charAt(0).toUpperCase() + aiName.slice(1);
+        const baseTitle = aiName.charAt(0).toUpperCase() + aiName.slice(1);
+        const title = model ? `${baseTitle} (${model.replace('gemini-', '')})` : baseTitle;
         
         socket.emit('terminal.createTab', id);
         const term = createTerminalInstance(id, title);
@@ -224,15 +229,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             if (path) {
                 socket.emit('terminal.toTerm', { tabId: id, data: `cd "${path}"\r` });
-                setTimeout(() => socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}\r` }), 200);
+                const cmd = model ? `${aiName} -m ${model}\r` : `${aiName}\r`;
+                setTimeout(() => socket.emit('terminal.toTerm', { tabId: id, data: cmd }), 200);
             } else {
-                socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}\r` });
+                const cmd = model ? `${aiName} -m ${model}\r` : `${aiName}\r`;
+                socket.emit('terminal.toTerm', { tabId: id, data: cmd });
             }
         }, 500);
     };
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
-        startAI('gemini', assignedPaths.gemini, 'gemini');
+        const model = document.getElementById('gemini-model-select').value;
+        startAI('gemini', assignedPaths.gemini, 'gemini', model);
     });
 
     document.getElementById('btn-claude').addEventListener('click', () => {
