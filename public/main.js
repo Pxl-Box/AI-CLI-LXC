@@ -95,6 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // State tracker for which AI is active
     let activeAI = 'none';
 
+    // --- Workspace State ---
+    const assignedPaths = {
+        gemini: localStorage.getItem('ai-workspace-gemini') || '',
+        claude: localStorage.getItem('ai-workspace-claude') || ''
+    };
+
+    // Update UI for stored paths
+    if (assignedPaths.gemini) document.getElementById('input-gemini-path').value = assignedPaths.gemini;
+    if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
+
     const sendCommand = (cmd) => {
         socket.emit('terminal.toTerm', cmd + '\r');
         term.focus();
@@ -102,12 +112,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
         activeAI = 'gemini';
-        sendCommand('gemini');
+        if (assignedPaths.gemini) {
+            sendCommand(`cd "${assignedPaths.gemini}"`);
+            setTimeout(() => sendCommand('gemini'), 100);
+        } else {
+            sendCommand('gemini');
+        }
     });
 
     document.getElementById('btn-claude').addEventListener('click', () => {
         activeAI = 'claude';
-        sendCommand('claude');
+        if (assignedPaths.claude) {
+            sendCommand(`cd "${assignedPaths.claude}"`);
+            setTimeout(() => sendCommand('claude'), 100);
+        } else {
+            sendCommand('claude');
+        }
     });
 
     document.getElementById('btn-commit').addEventListener('click', () => {
@@ -129,14 +149,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Settings Modal Logic --- //
+    // --- Workspace Explorer Logic --- //
     const settingsModal = document.getElementById('settings-modal');
-    const inputCwd = document.getElementById('input-cwd');
-    const displayCwd = document.getElementById('current-dir');
+    const inputBrowserPath = document.getElementById('input-browser-path');
+    const browserList = document.getElementById('browser-list');
+    const inputNewFolder = document.getElementById('input-new-folder');
+
+    let currentBrowserPath = '';
+
+    const loadDirectory = (dirPath) => {
+        socket.emit('fs.list', dirPath);
+    };
+
+    socket.on('fs.list.response', (data) => {
+        if (data.error) {
+            console.error('Directory Error:', data.error);
+            return;
+        }
+
+        currentBrowserPath = data.path;
+        inputBrowserPath.value = currentBrowserPath;
+        browserList.innerHTML = '';
+
+        data.folders.forEach(folder => {
+            const div = document.createElement('div');
+            div.className = 'browser-item';
+            div.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                ${folder.name}
+            `;
+            div.onclick = () => loadDirectory(folder.path);
+            browserList.appendChild(div);
+        });
+
+        if (data.folders.length === 0) {
+            browserList.innerHTML = '<div class="browser-item" style="color: #666; justify-content: center;">Empty Directory</div>';
+        }
+    });
 
     document.getElementById('btn-settings').addEventListener('click', () => {
         settingsModal.classList.add('active');
-        inputCwd.focus();
+        // Load default path on open if empty
+        if (!currentBrowserPath) loadDirectory('');
     });
 
     document.getElementById('btn-close-settings').addEventListener('click', () => {
@@ -144,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         term.focus();
     });
 
-    // Close on background click
     settingsModal.addEventListener('click', (e) => {
         if (e.target === settingsModal) {
             settingsModal.classList.remove('active');
@@ -152,20 +205,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Handle CWD Apply
-    const applyCwd = () => {
-        const newCwd = inputCwd.value.trim();
-        if (newCwd) {
-            socket.emit('terminal.changeCwd', newCwd);
-            displayCwd.textContent = newCwd.split('/').pop() || newCwd;
-            settingsModal.classList.remove('active');
-            term.focus();
+    document.getElementById('btn-up-dir').addEventListener('click', () => {
+        if (currentBrowserPath) {
+            // Get parent path by splitting and popping
+            const parts = currentBrowserPath.replace(/\\/g, '/').replace(/\/$/, '').split('/');
+            parts.pop();
+            const parent = parts.join('/') || '/';
+            loadDirectory(parent);
         }
-    };
+    });
 
-    document.getElementById('btn-apply-cwd').addEventListener('click', applyCwd);
-    inputCwd.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') applyCwd();
+    document.getElementById('btn-create-folder').addEventListener('click', () => {
+        const folderName = inputNewFolder.value.trim();
+        if (folderName && currentBrowserPath) {
+            socket.emit('fs.createDir', { parentPath: currentBrowserPath, folderName });
+        }
+    });
+
+    socket.on('fs.createDir.response', (data) => {
+        if (data.success) {
+            inputNewFolder.value = '';
+            loadDirectory(data.newPath); // Automatically enter it
+        } else {
+            alert('Failed to create folder: ' + data.error);
+        }
+    });
+
+    // Handle Assignments
+    document.getElementById('btn-assign-gemini').addEventListener('click', () => {
+        assignedPaths.gemini = currentBrowserPath;
+        localStorage.setItem('ai-workspace-gemini', currentBrowserPath);
+        document.getElementById('input-gemini-path').value = currentBrowserPath;
+    });
+
+    document.getElementById('btn-assign-claude').addEventListener('click', () => {
+        assignedPaths.claude = currentBrowserPath;
+        localStorage.setItem('ai-workspace-claude', currentBrowserPath);
+        document.getElementById('input-claude-path').value = currentBrowserPath;
     });
 
     // Handle Restart Term

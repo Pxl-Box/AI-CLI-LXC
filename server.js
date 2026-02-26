@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const pty = require('node-pty');
 const os = require('os');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -72,6 +73,45 @@ io.on('connection', (socket) => {
     socket.on('terminal.restart', () => {
         spawnTerminal();
         socket.emit('terminal.incData', '\r\n\x1b[33m[System] Terminal Force Restarted\x1b[0m\r\n');
+    });
+
+    // --- File System Explorer Hooks ---
+    socket.on('fs.list', (targetPath) => {
+        try {
+            const dirPath = targetPath || currentCwd;
+            // Ensure path exists
+            if (!fs.existsSync(dirPath)) {
+                return socket.emit('fs.list.response', { error: 'Path does not exist', path: dirPath, folders: [] });
+            }
+
+            const items = fs.readdirSync(dirPath, { withFileTypes: true });
+            const folders = items
+                .filter(item => item.isDirectory())
+                .map(item => ({
+                    name: item.name,
+                    path: path.join(dirPath, item.name)
+                }));
+
+            // Sort alphabetically
+            folders.sort((a, b) => a.name.localeCompare(b.name));
+
+            socket.emit('fs.list.response', { path: dirPath, folders });
+        } catch (error) {
+            socket.emit('fs.list.response', { error: error.message, path: targetPath, folders: [] });
+        }
+    });
+
+    socket.on('fs.createDir', (data) => {
+        try {
+            const targetPath = path.join(data.parentPath, data.folderName);
+            if (fs.existsSync(targetPath)) {
+                return socket.emit('fs.createDir.response', { success: false, error: 'Directory already exists' });
+            }
+            fs.mkdirSync(targetPath, { recursive: true });
+            socket.emit('fs.createDir.response', { success: true, newPath: targetPath });
+        } catch (error) {
+            socket.emit('fs.createDir.response', { success: false, error: error.message });
+        }
     });
 
     socket.on('disconnect', () => {
