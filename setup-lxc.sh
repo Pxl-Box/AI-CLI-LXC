@@ -39,8 +39,12 @@ if [ ! -d "/opt/ai-workspace" ]; then
     echo "Please ensure you run this script from inside the app directory,"
     echo "or SCP the files to /opt/ai-workspace first."
 else
-    cd /opt/ai-workspace
+    # Force a clean installation without Windows binaries
+    rm -rf node_modules package-lock.json
     npm install
+    
+    # Explicitly rebuild node-pty from source to fix Linux binary issues
+    npm rebuild node-pty
     
     # Optional: Start with PM2
     pm2 start server.js --name "ai-terminal"
