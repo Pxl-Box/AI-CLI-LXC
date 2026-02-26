@@ -4,7 +4,7 @@
     --border-color: rgba(255, 255, 255, 0.1);
     --text-primary: #e2e8f0;
     --text-muted: #94a3b8;
-    
+
     --brand-gemini: #8b5cf6;
     --brand-gemini-hover: #7c3aed;
     --brand-claude: #d97757;
@@ -13,7 +13,7 @@
     --brand-memory-hover: #059669;
     --brand-danger: #ef4444;
     --brand-danger-hover: #dc2626;
-    
+
     --glow-gemini: rgba(139, 92, 246, 0.4);
     --glow-claude: rgba(217, 119, 87, 0.4);
 }
@@ -63,6 +63,7 @@ body {
     margin-bottom: 0.5rem;
     background: linear-gradient(to right, #e2e8f0, #94a3b8);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -136,6 +137,7 @@ body {
     border-color: rgba(139, 92, 246, 0.3);
     background: rgba(139, 92, 246, 0.1);
 }
+
 .action-btn.primary:hover {
     background: var(--brand-gemini);
     box-shadow: 0 0 15px var(--glow-gemini);
@@ -146,6 +148,7 @@ body {
     border-color: rgba(217, 119, 87, 0.3);
     background: rgba(217, 119, 87, 0.1);
 }
+
 .action-btn.secondary:hover {
     background: var(--brand-claude);
     box-shadow: 0 0 15px var(--glow-claude);
@@ -156,6 +159,7 @@ body {
     border-color: rgba(16, 185, 129, 0.3);
     background: rgba(16, 185, 129, 0.1);
 }
+
 .action-btn.memory:hover {
     background: var(--brand-memory-hover);
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
@@ -166,6 +170,7 @@ body {
     background: transparent;
     color: var(--text-muted);
 }
+
 .action-btn.danger:hover {
     background: rgba(239, 68, 68, 0.1);
     color: var(--brand-danger);
@@ -202,9 +207,17 @@ body {
     border-radius: 50%;
 }
 
-.control.close { background-color: #ff5f56; }
-.control.minimize { background-color: #ffbd2e; }
-.control.maximize { background-color: #27c93f; }
+.control.close {
+    background-color: #ff5f56;
+}
+
+.control.minimize {
+    background-color: #ffbd2e;
+}
+
+.control.maximize {
+    background-color: #27c93f;
+}
 
 .window-title {
     flex: 1;
@@ -221,6 +234,8 @@ body {
     border-radius: 0 0 10px 10px;
     padding: 10px 0 10px 10px;
     overflow: hidden;
+    min-height: 0;
+    /* Crucial for xterm.js flex children */
     position: relative;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
@@ -234,13 +249,16 @@ body {
 .xterm .xterm-viewport::-webkit-scrollbar {
     width: 10px;
 }
+
 .xterm .xterm-viewport::-webkit-scrollbar-track {
     background: #000;
 }
+
 .xterm .xterm-viewport::-webkit-scrollbar-thumb {
     background: #333;
     border-radius: 5px;
 }
+
 .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
     background: #555;
 }

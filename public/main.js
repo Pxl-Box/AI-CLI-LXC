@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const term = new window.Terminal({
         cursorBlink: true,
         macOptionIsMeta: true,
+        scrollback: 5000,
         fontFamily: '"Fira Code", monospace',
         fontSize: 14,
         theme: {
@@ -91,25 +92,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Quick Action Buttons --- //
 
+    // State tracker for which AI is active
+    let activeAI = 'none';
+
     const sendCommand = (cmd) => {
         socket.emit('terminal.toTerm', cmd + '\r');
         term.focus();
     };
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
+        activeAI = 'gemini';
         sendCommand('gemini');
     });
 
     document.getElementById('btn-claude').addEventListener('click', () => {
+        activeAI = 'claude';
         sendCommand('claude');
     });
 
-    document.getElementById('btn-commit-claude').addEventListener('click', () => {
-        sendCommand('/init');
-    });
-
-    document.getElementById('btn-commit-gemini').addEventListener('click', () => {
-        sendCommand('/commit');
+    document.getElementById('btn-commit').addEventListener('click', () => {
+        if (activeAI === 'gemini') {
+            sendCommand('/commit');
+        } else if (activeAI === 'claude') {
+            sendCommand('/init');
+        } else {
+            // Default fallback if they just typed the command instead of clicking
+            alert("Please start Gemini or Claude using the Launchers first so the workspace knows which command to send!");
+            term.focus();
+        }
     });
 
     document.getElementById('btn-clear').addEventListener('click', () => {
