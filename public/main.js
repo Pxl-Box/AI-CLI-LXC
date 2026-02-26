@@ -200,6 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUsageBar("claude", 25);
         }
     };
+
+    const updateUsageBar = (type, increment) => {
         const fill = document.getElementById(`usage-${type}`);
         if (fill) {
             let width = parseInt(fill.style.width) || 0;
