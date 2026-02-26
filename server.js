@@ -22,14 +22,16 @@ io.on('connection', (socket) => {
     const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
     let currentCwd = process.env.HOME || process.env.USERPROFILE;
-    let ptyProcess = null;
+    // Store multiple PTY processes keyed by a tab ID
+    const ptyProcesses = new Map();
 
     // Helper to spawn/respawn the terminal
-    const spawnTerminal = () => {
-        if (ptyProcess) {
-            ptyProcess.kill();
+    const spawnTerminal = (tabId = 'default') => {
+        if (ptyProcesses.has(tabId)) {
+            ptyProcesses.get(tabId).kill();
         }
-        ptyProcess = pty.spawn(shell, [], {
+        
+        const ptyProcess = pty.spawn(shell, [], {
             name: 'xterm-color',
             cols: 80,
             rows: 24,
@@ -38,23 +40,28 @@ io.on('connection', (socket) => {
         });
 
         ptyProcess.onData((data) => {
-            socket.emit('terminal.incData', data);
+            socket.emit('terminal.incData', { tabId, data });
         });
+
+        ptyProcesses.set(tabId, ptyProcess);
+        return ptyProcess;
     };
 
     // Initial spawn
-    spawnTerminal();
+    spawnTerminal('default');
 
     // Handle data coming from the client and send it to the terminal
-    socket.on('terminal.toTerm', (data) => {
+    socket.on('terminal.toTerm', ({ tabId, data }) => {
+        const ptyProcess = ptyProcesses.get(tabId || 'default');
         if (ptyProcess) {
             ptyProcess.write(data);
         }
     });
 
     // Handle terminal resize events
-    socket.on('terminal.resize', (size) => {
+    socket.on('terminal.resize', ({ tabId, size }) => {
         try {
+            const ptyProcess = ptyProcesses.get(tabId || 'default');
             if (ptyProcess) {
                 ptyProcess.resize(size.cols, size.rows);
             }
@@ -63,16 +70,31 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- Tab Management ---
+    socket.on('terminal.createTab', (tabId) => {
+        spawnTerminal(tabId);
+    });
+
+    socket.on('terminal.closeTab', (tabId) => {
+        if (ptyProcesses.has(tabId)) {
+            ptyProcesses.get(tabId).kill();
+            ptyProcesses.delete(tabId);
+        }
+    });
+
     // --- Workspace Settings Hooks ---
     socket.on('terminal.changeCwd', (newPath) => {
         currentCwd = newPath;
-        spawnTerminal();
-        socket.emit('terminal.incData', `\r\n\x1b[32m[System] Terminal restarted in: ${newPath}\x1b[0m\r\n`);
+        // Restarts all terminals in new CWD or just the active one? 
+        // For now, let's just update the default/active logic
+        spawnTerminal('default'); 
+        socket.emit('terminal.incData', { tabId: 'default', data: `\r\n\x1b[32m[System] Terminal restarted in: ${newPath}\x1b[0m\r\n` });
     });
 
-    socket.on('terminal.restart', () => {
-        spawnTerminal();
-        socket.emit('terminal.incData', '\r\n\x1b[33m[System] Terminal Force Restarted\x1b[0m\r\n');
+    socket.on('terminal.restart', (tabId) => {
+        const id = tabId || 'default';
+        spawnTerminal(id);
+        socket.emit('terminal.incData', { tabId: id, data: '\r\n\x1b[33m[System] Terminal Force Restarted\x1b[0m\r\n' });
     });
 
     // --- File System Explorer Hooks ---
@@ -116,9 +138,10 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log(`[-] Client disconnected: ${socket.id}`);
-        if (ptyProcess) {
+        for (const [id, ptyProcess] of ptyProcesses) {
             ptyProcess.kill();
         }
+        ptyProcesses.clear();
     });
 });
 

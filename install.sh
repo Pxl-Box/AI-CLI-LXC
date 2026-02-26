@@ -24,15 +24,36 @@ apt install -y git curl
 if [ -d "$TARGET_DIR" ]; then
     echo "[+] Directory $TARGET_DIR already exists. Pulling latest updates..."
     cd "$TARGET_DIR"
-    git pull
+    
+    # Check if we actually need to pull anything
+    git fetch
+    UPSTREAM=${1:-'@{u}'}
+    LOCAL=$(git rev-parse @)
+    REMOTE=$(git rev-parse "$UPSTREAM")
+    
+    if [ "$LOCAL" = "$REMOTE" ]; then
+        echo "[+] Code is already up to date."
+        UPDATE_NEEDED=false
+    else
+        echo "[+] New changes detected. Updating..."
+        git pull
+        UPDATE_NEEDED=true
+    fi
 else
     echo "[+] Cloning repository to $TARGET_DIR..."
     git clone "$REPO_URL" "$TARGET_DIR"
     cd "$TARGET_DIR"
+    UPDATE_NEEDED=true
 fi
 
 echo "[+] Making setup script executable..."
 chmod +x setup-lxc.sh
 
-echo "[+] Launching main setup script..."
-./setup-lxc.sh
+if [ "$UPDATE_NEEDED" = true ]; then
+    echo "[+] Launching setup script..."
+    ./setup-lxc.sh
+else
+    echo "[+] Skipping full setup as code is already up to date."
+    echo "[+] Running soft-refresh to ensure services are active..."
+    ./setup-lxc.sh --soft
+fi
