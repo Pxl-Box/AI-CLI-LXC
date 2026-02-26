@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fitAddon.fit();
             term.focus();
             socket.emit('terminal.resize', { tabId, size: { cols: term.cols, rows: term.rows } });
-        }, 10);
+        }, 50);
     };
 
     const closeTab = (tabId) => {

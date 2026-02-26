@@ -91,6 +91,16 @@ body {
     background-color: #ef4444;
 }
 
+.quick-actions {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.quick-actions::-webkit-scrollbar {
+    display: none;
+}
+
 .quick-actions h3 {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -346,8 +356,8 @@ body {
 }
 
 .terminal-instance {
-    padding: 10px 0 10px 10px;
     height: 100%;
+    width: 100%;
 }
 
 /* xterm overrides */

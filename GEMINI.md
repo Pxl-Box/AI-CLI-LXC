@@ -17,7 +17,8 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **Stability:** Ensure all changes to `server.js` or deployment scripts are thoroughly tested for regressions, especially regarding terminal sizing and shell execution.
 - **Multi-Session Management:** When modifying PTY logic, ensure that tab IDs are correctly propagated through the socket layer to prevent cross-tab data leakage.
 - **Soft Update Integrity:** Maintain the version-checking logic in `install.sh`. Any new global dependencies must be added to the check list in `setup-lxc.sh` to prevent unnecessary re-installs.
-- **UX Consistency:** The terminal UI must remain minimal, high-performance, and focused on AI development workflows. New UI elements (like the tab bar) must follow the established glassmorphism aesthetic.
+- **UX Consistency:** The terminal UI must remain minimal, high-performance, and focused on AI development workflows. New UI elements (like the tab bar and usage bars) must follow the established glassmorphism aesthetic.
+- **Authentication Resilience:** Always check for an active GitHub PAT in the root `GEMINI.md` before attempting a push. Never store credentials locally within this workspace; always reference the master mandate.
 - **Security:** Maintain strict isolation between the web terminal and the host system. Validate all file path operations from the UI.
 
 ## Development Workflow
@@ -26,7 +27,9 @@ This directory is the primary workspace for maintaining and extending the web-ba
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
 ## Recent Progress (Session: Feb 26, 2026)
-- **Multi-Tab Terminal Support:** Implemented a full tab-based interface for the web terminal. Users can now run multiple simultaneous AI sessions (Gemini, Claude, or generic shells) in independent tabs.
-- **Optimized Deployment (Soft Update):** Rewrote `install.sh` and `setup-lxc.sh` to include version checks and a `--soft` flag. The system now detects existing installations and skips redundant steps like full system upgrades and clean NPM installs if the code is already up to date.
-- **Session Persistence & Isolation:** Enhanced `server.js` to manage a map of PTY processes per client, ensuring each tab maintains its own state and context while allowing for graceful cleanup on disconnect.
-- **Dynamic AI Launchers:** Updated UI launchers to automatically open a dedicated, correctly-named tab when starting Gemini or Claude.
+- **Multi-Tab Terminal Support:** Implemented a full tab-based interface for the web terminal.
+- **UI & Aesthetic Refinements:** Added model usage statistics, glassmorphism sidebar elements, and cache-busting versioning (v1.1) to ensure frontend updates are immediately visible.
+- **Optimized Deployment (Soft Update):** Enhanced `setup-lxc.sh` with a forced `pm2 restart` cycle and cache-bust instructions.
+- **Scrolling & Layout Fixes:** Refined terminal container CSS and increased `fitAddon` timeouts to 50ms to resolve intermittent scrolling and sizing issues.
+- **Session Persistence & Isolation:** Enhanced `server.js` to manage a map of PTY processes per client.
+--- End of Recent Progress ---

@@ -82,8 +82,8 @@ else
     
     # Restart the application
     if pm2 list | grep -q "ai-terminal"; then
-        echo "[+] Reloading AI Terminal service..."
-        pm2 reload ai-terminal
+        echo "[+] Restarting AI Terminal service..."
+        pm2 restart ai-terminal
     else
         echo "[+] Starting AI Terminal with PM2..."
         pm2 start server.js --name "ai-terminal"
@@ -91,6 +91,7 @@ else
         pm2 startup
     fi
     echo "Service is healthy and updated!"
+    echo "[!] IMPORTANT: If UI changes are not visible, please perform a HARD REFRESH (Ctrl+F5) in your browser."
 fi
 
 echo "=========================================================="
