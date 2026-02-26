@@ -43,6 +43,7 @@ pct create $CTID local:vztmpl/$TEMPLATE_FILE \
     --arch amd64 \
     --ostype ubuntu \
     --hostname ai-workspace \
+    --password "password" \
     --cores 2 \
     --memory 2048 \
     --swap 512 \
