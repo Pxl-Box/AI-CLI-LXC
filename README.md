@@ -19,36 +19,39 @@ A sleek, modern web-based wrapper around local terminal tools, specialized for r
    ```
 4. Open your web browser and navigate to `http://localhost:3000`. You should see the sleek dark-mode UI and have a functional PowerShell session (if on Windows) embedded.
 
-## Deployment to Proxmox LXC (Ubuntu 24.04)
+## Deployment to Proxmox
 
-### 1. Create a Headless LXC
-In Proxmox, create a new container using the Ubuntu 24.04 template. Ensure it has an IP address on your network.
+The absolute easiest way to deploy this is to run the automated host creation script directly from your **Proxmox Host Shell** (not inside an existing VM/LXC).
 
-### 2. Run the Helper Install Script
-Once your LXC is running and connected to the internet, SSH into it and run the installer.
+### Automatic Deployment (Recommended)
+1. Open your Proxmox web UI.
+2. Select your node (e.g., `pve`) and click **Shell**.
+3. Run the following command:
 
-**Option A: If your repository is Public:**
 ```bash
-# In your Proxmox LXC:
+bash <(curl -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/proxmox-create-lxc.sh)
+```
+
+This script handles absolutely everything:
+- It downloads the latest Ubuntu 24.04 template.
+- It dynamically creates a new unprivileged LXC with exactly the right specs (`local-lvm`, nesting enabled, 2GB RAM).
+- It boots the container and injects the `install.sh` and `setup-lxc.sh` scripts directly into it!
+
+Once finished, simply look at the console output for the assigned IP address and access the UI via `http://<LXC_IP>:3000`.
+
+### Manual Deployment (Inside an Existing LXC)
+If you already created your own Ubuntu 24.04 LXC and want to run the installer inside of it manually, SSH into that LXC and run:
+
+```bash
 bash <(curl -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/install.sh)
 ```
 
-**Option B: If your repository is Private (or not pushed yet):**
-You will need to pass a GitHub Personal Access Token (PAT) so the LXC can authorize the curl request and the git clone.
+---
+
+### Oops I ran the install.sh on my Proxmox Host!
+If you accidentally ran the inner `install.sh` in the Proxmox structural shell, you can safely completely uninstall it using the cleanup script:
 ```bash
-# Set your token as a variable
-export GITHUB_TOKEN="ghp_YourPersonalAccessTokenGoesHere"
-
-# Curl the script using the token, and the script will also use the token to clone
-bash <(curl -H "Authorization: token $GITHUB_TOKEN" -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/uninstall-host.sh)
 ```
-
-This script will automatically:
-- Install `git` and `curl`
-- Clone your repository to `/opt/ai-workspace`
-- Execute the `setup-lxc.sh` script to configure Node.js, AI CLIs, and PM2.
-
-### 4. Usage
-Access the UI via `http://<LXC_IP>:3000` in your host browser.
 
 **Pro Tip on Auth flows**: The Gemini CLI pops an OAuth flow out to the default browser. Inside headless LXC, this flow outputs a URL to the terminal console instead. The web workspace incorporates `xterm-addon-web-links`, which turns the ugly printed tokens into clickable URLs in the browser wrapper! Just click it to sign in on your host PC, grab the credentials, and paste them back into the terminal.

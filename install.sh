@@ -8,14 +8,9 @@
 set -e
 
 # --- CONFIGURATION ---
+# Replace this with your actual GitHub repository URL once pushed
+REPO_URL="https://github.com/Pxl-Box/AI-CLI-LXC.git"
 TARGET_DIR="/opt/ai-workspace"
-
-if [ -n "$GITHUB_TOKEN" ]; then
-    echo "Using provided GITHUB_TOKEN for authentication."
-    REPO_URL="https://${GITHUB_TOKEN}@github.com/Pxl-Box/AI-CLI-LXC.git"
-else
-    REPO_URL="https://github.com/Pxl-Box/AI-CLI-LXC.git"
-fi
 # ---------------------
 
 echo "=========================================================="
