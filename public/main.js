@@ -132,8 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-commit').addEventListener('click', () => {
         if (activeAI === 'gemini' || activeAI === 'claude') {
-            // User requested /init for both so they share the exact same context file structure
-            sendCommand('/init');
+            // Tell the AI to update the workspace's context/memory file
+            sendCommand('Please update the GEMINI.md file in this workspace to reflect our current progress, any new mandates, and the updated project context.');
         } else {
             alert("Please start Gemini or Claude using the Launchers first!");
             term.focus();

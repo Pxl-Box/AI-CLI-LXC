@@ -9,7 +9,7 @@ This project provides a fully localized, web-accessible interface for your headl
 - **Full Terminal Emulator:** Native interaction using `xterm.js` and `node-pty`.
 - **Workspace Manager:** Interactively click through your server's file system to browse directories and create new folders directly from the UI.
 - **Smart Model Isolation:** Assign a default working directory for Claude, and a separate one for Gemini. Clicking their respective launchers will automatically `cd` into the correct project folder before launching the AI.
-- **Universal Memory Commits:** A single "Commit to Memory" button that intelligently injects `/init` to easily generate context documents for whichever model is currently running.
+- **Universal Memory Commits:** A single "Commit to Memory" button that tells the active AI to update the workspace's `GEMINI.md` with current progress, new mandates, and overall project context.
 - **OAuth Click-through:** The terminal automatically detects links (like Google Auth logins) and makes them clickable, opening them on your localized host machine.
 
 ---

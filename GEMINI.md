@@ -2,14 +2,10 @@
 
 This directory is the primary workspace for maintaining and extending the web-based terminal interface for AI CLIs.
 
-## Project Overview
-**Source Repository:** This workspace contains the development source code for the "AI Terminal" wrapper. It serves as the staging area for updates, bug fixes, and feature enhancements to the platform itself.
-
-The "AI Terminal" provides:
-- **Web-based Terminal:** Interactive `xterm.js` and `node-pty` integration.
-- **File Exploration:** Native browser access to local directories.
-- **Model Context Separation:** Separate working paths for different AI models.
-- **Auto-deployment:** Proxmox-optimized installation scripts for LXCs.
+## Memory & Context Workflow
+- **Commit to Memory:** When the "Commit to Memory" button is clicked, it sends an instruction to update the current workspace's `GEMINI.md` file. 
+- **AI Action:** The AI must respond by summarizing the progress made during the session, identifying any new project-specific mandates, and updating the file to ensure continuity across future sessions.
+- **Hierarchical Memory:** Always prioritize updating the most specific `GEMINI.md` file (the one in the active workspace directory) over more general parent or global context files.
 
 ## Key Files & Directories
 - `server.js`: The core Express/Node.js server handling PTY and static file serving.
