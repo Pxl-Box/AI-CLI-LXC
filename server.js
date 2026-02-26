@@ -136,6 +136,48 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- Agent Management ---
+    const AGENTS_DIR = path.join(__dirname, 'agents');
+    if (!fs.existsSync(AGENTS_DIR)) fs.mkdirSync(AGENTS_DIR);
+
+    socket.on('agents.list', () => {
+        try {
+            const files = fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.json'));
+            const agents = files.map(f => {
+                const content = fs.readFileSync(path.join(AGENTS_DIR, f), 'utf-8');
+                return JSON.parse(content);
+            });
+            socket.emit('agents.list.response', agents);
+        } catch (error) {
+            console.error('Error listing agents:', error);
+            socket.emit('agents.list.response', []);
+        }
+    });
+
+    socket.on('agents.create', (agent) => {
+        try {
+            const fileName = `${agent.name.toLowerCase().replace(/\s+/g, '-')}.json`;
+            fs.writeFileSync(path.join(AGENTS_DIR, fileName), JSON.stringify(agent, null, 2));
+            socket.emit('agents.create.response', { success: true });
+            // Re-broadcast list to all? For now just to the sender
+        } catch (error) {
+            socket.emit('agents.create.response', { success: false, error: error.message });
+        }
+    });
+
+    socket.on('agents.delete', (agentName) => {
+        try {
+            const fileName = `${agentName.toLowerCase().replace(/\s+/g, '-')}.json`;
+            const filePath = path.join(AGENTS_DIR, fileName);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+            socket.emit('agents.delete.response', { success: true });
+        } catch (error) {
+            socket.emit('agents.delete.response', { success: false, error: error.message });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log(`[-] Client disconnected: ${socket.id}`);
         for (const [id, ptyProcess] of ptyProcesses) {

@@ -182,26 +182,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
 
     const sendCommand = (cmd) => {
-        socket.emit('terminal.toTerm', { tabId: activeTabId, data: cmd + '\r' });
+        socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
         const active = terminals.get(activeTabId);
         if (active) active.term.focus();
 
         // Simulate activity in the usage bars
-        const activeTabEl = document.querySelector('.tab.active .tab-title');
-        const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
+        const activeTabEl = document.querySelector(".tab.active .tab-title");
+        const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : "";
         
-        if (title.includes('gemini')) {
-            if (title.includes('3')) {
-                updateUsageBar('gemini-3', 20);
-            } else if (title.includes('2.5')) {
-                updateUsageBar('gemini-2-5', 15);
+        if (title.includes("gemini")) {
+            if (title.includes("3")) {
+                updateUsageBar("gemini-3", 20);
+            } else if (title.includes("2.5")) {
+                updateUsageBar("gemini-2.5", 15);
             }
-        } else if (title.includes('claude')) {
-            updateUsageBar('claude', 25);
+        } else if (title.includes("claude")) {
+            updateUsageBar("claude", 25);
         }
     };
-
-    const updateUsageBar = (type, increment) => {
         const fill = document.getElementById(`usage-${type}`);
         if (fill) {
             let width = parseInt(fill.style.width) || 0;
@@ -220,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startAI = (aiName, path, color, model = null) => {
         const id = `${aiName}-${Math.random().toString(36).substr(2, 5)}`;
         const baseTitle = aiName.charAt(0).toUpperCase() + aiName.slice(1);
-        const title = model ? `${baseTitle} (${model.replace('gemini-', '')})` : baseTitle;
+        const title = model ? `${baseTitle} (${model})` : baseTitle;
         
         socket.emit('terminal.createTab', id);
         const term = createTerminalInstance(id, title);
@@ -328,4 +326,125 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('terminal.restart', activeTabId);
         settingsModal.classList.remove('active');
     });
+
+    // --- Agent Management Logic ---
+    const agentModal = document.getElementById('agent-modal');
+    const agentsListEl = document.getElementById('agents-list');
+    const btnAddAgent = document.getElementById('btn-add-agent');
+    const btnCloseAgent = document.getElementById('btn-close-agent');
+    const btnSaveAgent = document.getElementById('btn-save-agent');
+
+    const inputAgentName = document.getElementById('input-agent-name');
+    const selectAgentModel = document.getElementById('select-agent-model');
+    const inputAgentPrompt = document.getElementById('input-agent-prompt');
+
+    const loadAgents = () => {
+        socket.emit('agents.list');
+    };
+
+    btnAddAgent.onclick = () => {
+        agentModal.classList.add('active');
+    };
+
+    btnCloseAgent.onclick = () => {
+        agentModal.classList.remove('active');
+    };
+
+    btnSaveAgent.onclick = () => {
+        const name = inputAgentName.value.trim();
+        const model = selectAgentModel.value;
+        const prompt = inputAgentPrompt.value.trim();
+
+        if (name && prompt) {
+            socket.emit('agents.create', { name, model, prompt });
+        } else {
+            alert('Please provide both a name and instructions.');
+        }
+    };
+
+    socket.on('agents.create.response', (data) => {
+        if (data.success) {
+            agentModal.classList.remove('active');
+            inputAgentName.value = '';
+            inputAgentPrompt.value = '';
+            loadAgents();
+        } else {
+            alert('Error creating agent: ' + data.error);
+        }
+    });
+
+    socket.on('agents.list.response', (agents) => {
+        agentsListEl.innerHTML = '';
+        agents.forEach(agent => {
+            const div = document.createElement('div');
+            div.className = 'agent-item';
+            div.innerHTML = `
+                <div class="agent-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2Z"/><path d="M12 12 2.1 12.1"/><path d="m4.5 9 1.4 1.4"/><path d="M12 12V2a10 10 0 0 0-8.7 5.5"/></svg>
+                </div>
+                <div class="agent-info">
+                    <span class="agent-name">${agent.name}</span>
+                    <span class="agent-model">${agent.model}</span>
+                </div>
+                <button class="agent-delete-btn icon-btn" title="Delete Agent">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+            `;
+            
+            div.onclick = (e) => {
+                if (e.target.closest('.agent-delete-btn')) {
+                    if (confirm(`Are you sure you want to delete "${agent.name}"?`)) {
+                        socket.emit('agents.delete', agent.name);
+                    }
+                    return;
+                }
+                launchAgent(agent);
+            };
+
+            agentsListEl.appendChild(div);
+        });
+    });
+
+    socket.on('agents.delete.response', (data) => {
+        if (data.success) {
+            loadAgents();
+        }
+    });
+
+    const launchAgent = (agent) => {
+        const id = `agent-${Math.random().toString(36).substr(2, 5)}`;
+        const title = agent.name;
+        
+        socket.emit('terminal.createTab', id);
+        const term = createTerminalInstance(id, title);
+        switchTab(id);
+
+        const aiName = agent.model === 'claude' ? 'claude' : 'gemini';
+        const modelArg = aiName === 'gemini' ? ` -m ${agent.model}` : '';
+        const path = assignedPaths[aiName];
+
+        setTimeout(() => {
+            if (path) {
+                socket.emit('terminal.toTerm', { tabId: id, data: `cd "${path}"\r` });
+                setTimeout(() => {
+                    socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}${modelArg}\r` });
+                    // Prime with system prompt
+                    setTimeout(() => {
+                        const primeCmd = `System Instruction: ${agent.prompt}\r`;
+                        socket.emit('terminal.toTerm', { tabId: id, data: primeCmd });
+                    }, 2000);
+                }, 200);
+            } else {
+                socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}${modelArg}\r` });
+                // Prime with system prompt
+                setTimeout(() => {
+                    const primeCmd = `System Instruction: ${agent.prompt}\r`;
+                    socket.emit('terminal.toTerm', { tabId: id, data: primeCmd });
+                }, 2000);
+            }
+        }, 500);
+    };
+
+    // Initial load
+    loadAgents();
 });

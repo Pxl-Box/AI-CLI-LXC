@@ -27,10 +27,10 @@ This directory is the primary workspace for maintaining and extending the web-ba
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
 ## Recent Progress (Session: Feb 26, 2026)
-- **Multi-Tab Terminal Support:** Implemented a full tab-based interface for the web terminal.
-- **UI & Aesthetic Refinements:** Added model usage statistics, glassmorphism sidebar elements, and cache-busting versioning (v1.1) to ensure frontend updates are immediately visible.
-- **Optimized Deployment (Soft Update):** Enhanced `setup-lxc.sh` with a forced `pm2 restart` cycle and cache-bust instructions.
-- **Robustness & Update Integrity:** Updated `install.sh` to include `git checkout .` before pulling, ensuring the front-end definitely updates even if minor local modifications exist in the deployment folder.
-- **Scrolling & Layout Fixes:** Refined terminal container CSS and increased `fitAddon` timeouts to 50ms to resolve intermittent scrolling and sizing issues.
-- **Session Persistence & Isolation:** Enhanced `server.js` to manage a map of PTY processes per client.
+- **Gemini Tier Integration (3.1 & 2.5):** Refactored the Gemini launcher to support the latest model tiers, including Gemini 3.1 Pro (Auto), Gemini 3 Flash (Auto), Gemini 2.5 Pro, and Gemini 2.5 Flash.
+- **Dynamic Model Selection:** Implemented a new dropdown selection system in the sidebar, allowing users to choose specific models before launching the Gemini CLI.
+- **Tiered Usage Dashboard:** Updated the visual usage bars to provide real-time (estimated) tracking for Gemini 3.1 and 2.5 tiers independently.
+- **Intelligent Tab Labeling:** Enhanced terminal tab management to dynamically include the active model name (e.g., "Gemini (3.1-pro)") in the title.
+- **Asset Optimization:** Purged redundant screenshots and standardized on `Screenshot 2026-02-26 222353.png` as the current UI reference.
+- **Global Sync:** Committed and pushed all UI and backend changes to the `Pxl-Box/AI-CLI-LXC` repository.
 --- End of Recent Progress ---
