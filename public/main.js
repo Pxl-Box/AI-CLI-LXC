@@ -70,6 +70,119 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSavedProjects();
     };
 
+    const saveSavedProjects = () => {
+        localStorage.setItem('ai-saved-projects', JSON.stringify(savedProjects));
+        renderSavedProjects();
+    };
+
+    const renderSavedProjects = () => {
+        // 1. Sync active workspace dropdowns
+        const activeWsSelect = document.getElementById('active-workspace-select');
+        const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
+        const savedProjectsListEl = document.getElementById('saved-projects-list');
+
+        const allSelects = [activeWsSelect, settingsActiveWsSelect, savedProjectsListEl];
+
+        allSelects.forEach(selectEl => {
+            if (!selectEl) return;
+            const currentSelection = selectEl.value || localStorage.getItem('ai-active-workspace') || '';
+            
+            selectEl.innerHTML = (selectEl.id === 'saved-projects-list' ? '' : '<option value="">Default (~)</option>') +
+                savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
+            
+            if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
+                selectEl.value = currentSelection;
+            } else if (selectEl.id === 'saved-projects-list' && savedProjects.length === 0) {
+                selectEl.innerHTML = '<option value="">-- no projects saved --</option>';
+            }
+        });
+
+        // 2. Populate the detailed projects list in Settings -> Projects
+        const container = document.getElementById('saved-projects-container');
+        if (container) {
+            container.innerHTML = '';
+            if (savedProjects.length === 0) {
+                container.innerHTML = '<div class="help-text" style="font-style: italic; text-align: center; padding: 2rem;">No projects saved yet. Navigate to a folder and click "+ Save Path".</div>';
+            } else {
+                savedProjects.forEach(project => {
+                    const div = document.createElement('div');
+                    div.className = 'assignment-row';
+                    div.style.background = 'rgba(0,0,0,0.2)';
+                    div.style.padding = '0.75rem';
+                    div.style.borderRadius = '8px';
+                    div.style.border = '1px solid var(--border-color)';
+                    
+                    div.innerHTML = `
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Fira Code', monospace;">${project.path}</div>
+                        </div>
+                        <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                            <button class="action-btn small primary btn-load" title="Set as Active">Load</button>
+                            <button class="action-btn small danger btn-del" title="Delete Project">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    `;
+
+                    div.querySelector('.btn-load').onclick = () => {
+                        handleWorkspaceChange({ target: { value: project.path } });
+                        loadDirectory(project.path);
+                    };
+
+                    div.querySelector('.btn-del').onclick = () => {
+                        if (confirm(`Remove "${project.name}" from saved projects?`)) {
+                            savedProjects = savedProjects.filter(p => p.path !== project.path);
+                            saveSavedProjects();
+                        }
+                    };
+
+                    container.appendChild(div);
+                });
+            }
+        }
+    };
+
+    // Global listener for workspace changes
+    const handleWorkspaceChange = (e) => {
+        const targetWorkspace = e.target.value;
+        const activeWsSelect = document.getElementById('active-workspace-select');
+        const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
+        const savedProjectsListEl = document.getElementById('saved-projects-list');
+
+        if (activeWsSelect) activeWsSelect.value = targetWorkspace;
+        if (settingsActiveWsSelect) settingsActiveWsSelect.value = targetWorkspace;
+        if (savedProjectsListEl) savedProjectsListEl.value = targetWorkspace;
+
+        localStorage.setItem('ai-active-workspace', targetWorkspace);
+
+        // Update active tab's workspace
+        if (activeTabId && terminals.has(activeTabId)) {
+            const data = terminals.get(activeTabId);
+            data.workspace = targetWorkspace;
+        }
+
+        // Automatically ensure an 'assets' folder exists in the selected workspace
+        if (targetWorkspace) {
+            socket.emit('fs.createDir', { parentPath: targetWorkspace, folderName: 'assets' });
+        }
+    };
+
+    // Attach listeners once
+    // We wrap in a check to ensure elements exist
+    const initWorkspaceListeners = () => {
+        const activeWsSelect = document.getElementById('active-workspace-select');
+        const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
+        const savedProjectsListEl = document.getElementById('saved-projects-list');
+        
+        if (activeWsSelect) activeWsSelect.addEventListener('change', handleWorkspaceChange);
+        if (settingsActiveWsSelect) settingsActiveWsSelect.addEventListener('change', handleWorkspaceChange);
+        if (savedProjectsListEl) savedProjectsListEl.addEventListener('change', handleWorkspaceChange);
+    };
+    
+    // Call init after DOM is fully ready or just here if we know elements are present
+    setTimeout(initWorkspaceListeners, 100);
+
     const createTerminalInstance = (tabId, title = 'Terminal', workspace = null) => {
         // Create UI for Tab
         const tabEl = document.createElement('div');
