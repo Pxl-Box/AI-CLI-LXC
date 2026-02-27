@@ -306,8 +306,10 @@
                                 style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: nowrap;">
                                 <button id="btn-up-dir" class="action-btn small secondary" title="Go Up One Level"
                                     style="flex-shrink: 0;">↑ Up</button>
-                                <span id="input-browser-path"
-                                    style="font-family: 'Fira Code', monospace; font-size: 0.78rem; color: var(--text-secondary); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex-shrink: 1;">/</span>
+                                <input type="text" id="input-browser-path" value="/"
+                                    style="font-family: 'Fira Code', monospace; font-size: 0.78rem; color: var(--text-secondary); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.6rem; max-width: 150px; flex-shrink: 1;">
+                                <button id="btn-go-dir" class="action-btn small primary" title="Go to Path"
+                                    style="flex-shrink: 0;">Go</button>
                                 <select id="browser-list" class="model-select"
                                     style="flex: 1; min-width: 80px; font-family: 'Fira Code', monospace; font-size: 0.8rem;">
                                     <option value="">-- select folder --</option>

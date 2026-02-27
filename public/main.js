@@ -541,6 +541,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Manual Path Entry
+    const btnGoDir = document.getElementById('btn-go-dir');
+    if (btnGoDir && inputBrowserPath) {
+        btnGoDir.addEventListener('click', () => {
+            loadDirectory(inputBrowserPath.value.trim());
+        });
+        inputBrowserPath.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadDirectory(inputBrowserPath.value.trim());
+            }
+        });
+    }
+
     // Toggle the new-folder input row
     const btnNewFolderInline = document.getElementById('btn-new-folder-inline');
     const btnCancelFolder = document.getElementById('btn-cancel-folder');
@@ -558,10 +572,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     socket.on('fs.list.response', (data) => {
-        if (data.error) return;
+        if (data.error) {
+            alert(`Error reading directory:\n${data.error}`);
+            return;
+        }
         currentBrowserPath = data.path;
-        // inputBrowserPath is now a <span>
-        if (inputBrowserPath) inputBrowserPath.textContent = currentBrowserPath;
+        if (inputBrowserPath) inputBrowserPath.value = currentBrowserPath;
         // Populate the dropdown
         if (browserList) {
             browserList.innerHTML = '<option value="">-- select folder --</option>';

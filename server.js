@@ -213,7 +213,13 @@ io.on('connection', (socket) => {
                 return socket.emit('fs.list.response', { error: 'Path does not exist', path: dirPath, folders: [] });
             }
 
-            const items = fs.readdirSync(dirPath, { withFileTypes: true });
+            let items;
+            try {
+                items = fs.readdirSync(dirPath, { withFileTypes: true });
+            } catch (err) {
+                return socket.emit('fs.list.response', { error: `Permission denied or cannot read directory: ${err.message}`, path: dirPath, folders: [] });
+            }
+
             const folders = items
                 .filter(item => item.isDirectory())
                 .map(item => ({
@@ -224,12 +230,20 @@ io.on('connection', (socket) => {
 
             const files = items
                 .filter(item => !item.isDirectory())
-                .map(item => ({
-                    name: item.name,
-                    path: path.join(dirPath, item.name),
-                    type: 'file',
-                    size: fs.statSync(path.join(dirPath, item.name)).size
-                }));
+                .map(item => {
+                    let size = -1;
+                    try {
+                        size = fs.statSync(path.join(dirPath, item.name)).size;
+                    } catch (statErr) {
+                        // Ignore stat errors for locked/system files
+                    }
+                    return {
+                        name: item.name,
+                        path: path.join(dirPath, item.name),
+                        type: 'file',
+                        size: size
+                    };
+                });
 
             // Sort alphabetically
             folders.sort((a, b) => a.name.localeCompare(b.name));
