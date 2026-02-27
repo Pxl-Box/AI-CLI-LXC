@@ -518,21 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-clear').addEventListener('click', () => {
-        const active = terminals.get(activeTabId);
-        if (active) {
-            active.term.clear();
-            const activeTabEl = document.querySelector('.tab.active .tab-title');
-            const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
 
-            // If it's an AI CLI, use /clear, otherwise use standard clear
-            const clearCmd = (title.includes('gemini') || title.includes('claude')) ? '/clear' : 'clear';
-
-            // Send command with both \r and \n to ensure execution across different shells/REPLs
-            socket.emit("terminal.toTerm", { tabId: activeTabId, data: clearCmd + "\r\n" });
-            active.term.focus();
-        }
-    });
 
     // --- Workspace Explorer Logic --- //
     const settingsModal = document.getElementById('settings-modal');
