@@ -62,6 +62,8 @@ echo "[5.5/6] Checking Ollama..."
 if ! command -v ollama &> /dev/null; then
     echo "[+] Installing Ollama..."
     curl -fsSL https://ollama.com/install.sh | sh
+    # Ensure it's in the path for this session
+    export PATH=$PATH:/usr/local/bin
 else
     echo "[+] Ollama is already installed."
 fi
@@ -72,6 +74,9 @@ if [ ! -d "/opt/ai-workspace" ]; then
     echo "Warning: /opt/ai-workspace directory not found."
 else
     cd /opt/ai-workspace
+    
+    # Update PATH for the build/install session
+    export PATH=$PATH:/usr/local/bin
     
     # Only perform heavy NPM install if node_modules is missing or we are NOT in soft mode
     if [ ! -d "node_modules" ] || [ "$SOFT_UPDATE" = false ]; then
