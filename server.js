@@ -112,7 +112,7 @@ io.on('connection', (socket) => {
         if (globalPtyProcesses.has(tabId)) {
             globalPtyProcesses.get(tabId).pty.kill();
         }
-        
+
         // Ensure /usr/local/bin is in the PATH for spawned processes (critical for Ollama)
         const env = { ...process.env };
         if (!env.PATH.includes('/usr/local/bin')) {
@@ -194,7 +194,7 @@ io.on('connection', (socket) => {
         currentCwd = newPath;
         // Restarts all terminals in new CWD or just the active one? 
         // For now, let's just update the default/active logic
-        spawnTerminal('default'); 
+        spawnTerminal('default');
         socket.emit('terminal.incData', { tabId: 'default', data: `\r\n\x1b[32m[System] Terminal restarted in: ${newPath}\x1b[0m\r\n` });
     });
 
@@ -318,25 +318,52 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- Git Integration ---
+    socket.on('fs.gitClone', ({ url, destination }) => {
+        const { exec } = require('child_process');
+        // If destination is somehow not provided, default to workspace
+        const targetPath = destination || process.cwd();
+
+        exec(`git clone ${url}`, { cwd: targetPath }, (error, stdout, stderr) => {
+            if (error) {
+                return socket.emit('fs.gitClone.response', { success: false, error: stderr || error.message });
+            }
+            socket.emit('fs.gitClone.response', { success: true, output: stdout || stderr });
+        });
+    });
+
     // --- Ollama Model Management ---
+    socket.on('ollama.rmModel', (modelName) => {
+        const { exec } = require('child_process');
+        const execOptions = {
+            env: { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` }
+        };
+        exec(`ollama rm ${modelName}`, execOptions, (error, stdout, stderr) => {
+            if (error) {
+                return socket.emit('ollama.rmModel.response', { success: false, error: stderr || error.message });
+            }
+            socket.emit('ollama.rmModel.response', { success: true });
+        });
+    });
+
     socket.on('ollama.listModels', () => {
         const { exec } = require('child_process');
         // Inject /usr/local/bin specifically for this exec call
         const execOptions = {
             env: { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` }
         };
-        
+
         exec('ollama list', execOptions, (error, stdout, stderr) => {
             if (error) {
                 return socket.emit('ollama.listModels.response', { success: false, models: [] });
             }
-            
+
             const lines = stdout.trim().split('\n').slice(1); // Skip header
             const models = lines.map(line => {
                 const parts = line.split(/\s+/);
                 return parts[0]; // The NAME column
             }).filter(name => name);
-            
+
             socket.emit('ollama.listModels.response', { success: true, models });
         });
     });

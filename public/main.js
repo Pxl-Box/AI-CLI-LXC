@@ -281,12 +281,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const assignedPaths = {
         gemini: localStorage.getItem('ai-workspace-gemini') || '',
         claude: localStorage.getItem('ai-workspace-claude') || '',
-        assets: localStorage.getItem('ai-workspace-assets') || ''
+        assets: localStorage.getItem('ai-workspace-assets') || '',
+        generated: localStorage.getItem('ai-workspace-generated') || ''
     };
 
     if (assignedPaths.gemini) document.getElementById('input-gemini-path').value = assignedPaths.gemini;
     if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
     if (assignedPaths.assets) document.getElementById('input-asset-path').value = assignedPaths.assets;
+    const inputGeneratedPath = document.getElementById('input-generated-path');
+    if (assignedPaths.generated && inputGeneratedPath) inputGeneratedPath.value = assignedPaths.generated;
 
     const sendCommand = (cmd) => {
         socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
@@ -341,9 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     };
 
+    // Helper to get active workspace from dropdowns
     const getActiveWorkspace = () => {
-        const select = document.getElementById('active-workspace-select');
-        return select && select.value ? select.value : '';
+        const select1 = document.getElementById('active-workspace-select');
+        const select2 = document.getElementById('settings-active-workspace-select');
+        return (select1 && select1.value) || (select2 && select2.value) || null;
     };
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
@@ -365,6 +370,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     socket.on('ollama.listModels.response', (data) => {
+        const localAiList = document.getElementById('local-ai-list');
+        if (localAiList) {
+            localAiList.innerHTML = '';
+            if (data.models.length === 0) {
+                localAiList.innerHTML = '<div class="help-text" style="font-style: italic;">No local models found installed on host.</div>';
+            }
+        }
+
         if (data.success && data.models.length > 0) {
             // Keep "Custom" at the end
             const customOption = localModelSelect.querySelector('option[value="custom"]');
@@ -377,9 +390,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 opt.value = model;
                 opt.textContent = model;
                 localModelSelect.appendChild(opt);
+
+                // Populate settings list
+                if (localAiList) {
+                    const row = document.createElement('div');
+                    row.className = 'assignment-row';
+                    row.innerHTML = `
+                        <input type="text" readonly value="${model}" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 0.8rem;">
+                        <button class="action-btn danger small" title="Delete Model">Delete</button>
+                    `;
+                    row.querySelector('.action-btn').addEventListener('click', () => {
+                        if (confirm(`Are you sure you want to delete ${model}?`)) {
+                            socket.emit('ollama.rmModel', model);
+                        }
+                    });
+                    localAiList.appendChild(row);
+                }
             });
 
             if (customOption) localModelSelect.appendChild(customOption);
+        }
+    });
+
+    socket.on('ollama.rmModel.response', (data) => {
+        if (data.success) {
+            syncLocalModels(); // Refresh list after deletion
+        } else {
+            alert(`Error deleting model:\n${data.error}`);
         }
     });
 
@@ -465,9 +502,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Settings UI Tab Logic --- //
+    const settingsTabs = document.querySelectorAll('.settings-tab-btn');
+    const settingsPanes = document.querySelectorAll('.settings-tab-pane');
+
+    const openSettingsTab = (tabId) => {
+        settingsTabs.forEach(t => {
+            t.style.borderColor = 'transparent';
+            t.style.color = 'var(--text-muted)';
+        });
+        settingsPanes.forEach(p => p.style.display = 'none');
+
+        const activeBtn = document.querySelector(`.settings-tab-btn[data-tab="${tabId}"]`);
+        const activePane = document.getElementById(tabId);
+
+        if (activeBtn) {
+            activeBtn.style.borderColor = 'var(--brand-gemini)';
+            activeBtn.style.color = 'var(--text-primary)';
+        }
+        if (activePane) {
+            activePane.style.display = 'flex';
+        }
+
+        // Trigger specific loads
+        if (tabId === 'settings-localai') {
+            socket.emit('ollama.listModels');
+        }
+    };
+
+    settingsTabs.forEach(btn => {
+        btn.addEventListener('click', () => openSettingsTab(btn.getAttribute('data-tab')));
+    });
+
     document.getElementById('btn-settings').addEventListener('click', () => {
         settingsModal.classList.add('active');
         if (!currentBrowserPath) loadDirectory('');
+        // Always reset to General Tab on open
+        openSettingsTab('settings-general');
     });
     document.getElementById('btn-close-settings').addEventListener('click', () => {
         settingsModal.classList.remove('active');
@@ -517,6 +588,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-asset-path').value = currentBrowserPath;
     });
 
+    document.getElementById('btn-assign-generated').addEventListener('click', () => {
+        assignedPaths.generated = currentBrowserPath;
+        localStorage.setItem('ai-workspace-generated', currentBrowserPath);
+        document.getElementById('input-generated-path').value = currentBrowserPath;
+    });
+
     // --- Saved Projects Logic --- //
     const savedProjectsListEl = document.getElementById('saved-projects-list');
     let savedProjects = [];
@@ -560,6 +637,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="font-size: 0.7rem; color: var(--text-secondary); font-family: 'Fira Code', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.path}</div>
             `;
 
+            // Actions
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'display: flex; gap: 0.25rem; flex-shrink: 0;';
+
             // Delete
             const btnDelete = document.createElement('button');
             btnDelete.className = 'icon-btn';
@@ -580,22 +661,33 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(div);
         });
 
-        // Populate Active Workspace Dropdown
+        // Populate Active Workspace Dropdown (Sidebar)
         const activeWsSelect = document.getElementById('active-workspace-select');
-        if (activeWsSelect) {
-            const currentSelection = activeWsSelect.value;
-            activeWsSelect.innerHTML = '<option value="">Default (~)</option>';
-            savedProjects.forEach(proj => {
-                const opt = document.createElement('option');
-                opt.value = proj.path;
-                opt.textContent = proj.name;
-                activeWsSelect.appendChild(opt);
-            });
-            // Try to retain previous selection
-            if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
-                activeWsSelect.value = currentSelection;
+        // Populate Active Workspace Dropdown (Settings Modal)
+        const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
+
+        [activeWsSelect, settingsActiveWsSelect].forEach(selectEl => {
+            if (selectEl) {
+                const currentSelection = selectEl.value;
+                selectEl.innerHTML = '<option value="">Default (~)</option>';
+                savedProjects.forEach(proj => {
+                    const opt = document.createElement('option');
+                    opt.value = proj.path;
+                    opt.textContent = proj.name;
+                    selectEl.appendChild(opt);
+                });
+                // Try to retain previous selection
+                if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
+                    selectEl.value = currentSelection;
+                }
+
+                // Sync the two dropdowns when one changes
+                selectEl.addEventListener('change', (e) => {
+                    if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = e.target.value;
+                    if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = e.target.value;
+                });
             }
-        }
+        });
     };
 
     const btnSaveProject = document.getElementById('btn-save-project');
@@ -856,6 +948,57 @@ document.addEventListener('DOMContentLoaded', () => {
             btnImportZip.disabled = false;
         }
     };
+
+    // --- Git Clone Logic ---
+    const btnGitClone = document.getElementById('btn-git-clone');
+    const inputGitUrl = document.getElementById('input-git-url');
+    if (btnGitClone && inputGitUrl) {
+        btnGitClone.addEventListener('click', () => {
+            const url = inputGitUrl.value.trim();
+            if (!url) { alert("Please enter a valid Git URL"); return; }
+
+            const targetDir = currentBrowserPath || assignedPaths.gemini || '';
+            if (!targetDir) { alert("Select a target workspace in the explorer first!"); return; }
+
+            btnGitClone.disabled = true;
+            btnGitClone.textContent = "Cloning...";
+            socket.emit('fs.gitClone', { url, destination: targetDir });
+        });
+
+        socket.on('fs.gitClone.response', (data) => {
+            btnGitClone.disabled = false;
+            btnGitClone.textContent = "Clone";
+
+            if (data.success) {
+                inputGitUrl.value = '';
+                alert("Repository cloned successfully!");
+                const targetDir = currentBrowserPath || assignedPaths.gemini || '';
+                loadDirectory(targetDir);
+            } else {
+                alert(`Clone failed:\n${data.error}`);
+            }
+        });
+    }
+
+    // --- Settings General Auth Logins ---
+    const attachAuthLogin = (btnId, title, cmd) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const id = `auth-${Math.random().toString(36).substr(2, 5)}`;
+            socket.emit('terminal.createTab', id);
+            createTerminalInstance(id, title);
+            switchTab(id);
+            setTimeout(() => socket.emit('terminal.toTerm', { tabId: id, data: `${cmd}\r` }), 500);
+
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) settingsModal.classList.remove('active');
+        });
+    };
+
+    attachAuthLogin('btn-login-gemini', 'Gemini Auth', 'gemini');
+    attachAuthLogin('btn-login-claude', 'Claude Auth', 'claude');
+    attachAuthLogin('btn-login-github', 'GitHub Auth', 'gh auth login');
 
     // --- Workspace Explorer Navigation ---
     const openExplorer = (path) => {

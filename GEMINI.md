@@ -27,6 +27,17 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **System Monitoring:** The header MUST display a real-time "System Pulse" showing CPU and RAM utilization for the host container.
 - **Session Resilience:** I MUST maintain a `.gemini_recovery.json` file in the workspace root. This file acts as a "Black Box" recorder. In the event of a session crash, the next AI instance MUST read this file during the Research phase to immediately resume work without user intervention.
 
+## Recent Progress (Session: Feb 27, 2026 - Part 5)
+- **Settings UI Refactor:**
+    - Transitioned the Settings Modal from a scrollable list to a **Tabbed Sidebar Interface** for better organization.
+    - Added tabs for: General, Workspace, Saved Projects, Import & Git, and Local AIs.
+- **Enhanced Configuration:**
+    - **General Tab:** Replaced API key inputs with buttons that launch Native CLIs (`gemini`, `claude`, `gh auth login`) in a new terminal tab for secure authentication.
+    - **Workspace Tab:** Added an explicit `Generated Content Path` configuration alongside Asset Storage.
+- **Git & Tool Integrations:**
+    - **Import & Git:** Added `git clone` capability directly via URL to pull repositories into the assigned workspace.
+    - **Local AIs:** Implemented an integrated view of installed Ollama models with a direct "Delete" button mapping to `ollama rm`.
+
 ## Recent Progress (Session: Feb 27, 2026 - Part 4)
 - **Real-time Monitoring & UI:**
     - Integrated `systeminformation` into the backend to track host resources (CPU/RAM).

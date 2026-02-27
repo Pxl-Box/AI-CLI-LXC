@@ -258,107 +258,197 @@
                 <h3>Workspace Settings</h3>
                 <button class="close-btn" id="btn-close-settings">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="settings-column">
-                    <div class="form-group">
-                        <label>Workspace Explorer</label>
-                        <p class="help-text">Click folders to browse. Assign workspaces to automatically isolate
-                            context.
-                        </p>
-
-                        <div class="browser-container">
-                            <div class="browser-header">
-                                <button id="btn-up-dir" class="action-btn small secondary" title="Go Up One Directory">↑
-                                    Up</button>
-                                <input type="text" id="input-browser-path" class="browser-path-input" readonly
-                                    autocomplete="off">
-                            </div>
-                            <div class="browser-list" id="browser-list">
-                                <!-- Folders inject here -->
-                            </div>
-                            <div class="browser-actions">
-                                <input type="text" id="input-new-folder" placeholder="New folder name..."
-                                    autocomplete="off">
-                                <button id="btn-create-folder" class="action-btn small primary">Create</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group"
-                        style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <h4>Saved Projects</h4>
-                            <button class="action-btn small primary" id="btn-save-project"
-                                title="Save current explorer path as a project">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" style="margin-right: 4px;">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                    <polyline points="17 21 17 13 7 13 7 21" />
-                                    <polyline points="7 3 7 8 15 8" />
-                                </svg>
-                                Save Current Path
-                            </button>
-                        </div>
-                        <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for quick
-                            assignment.</p>
-                        <div id="saved-projects-list"
-                            style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
-                            <!-- Saved projects inject here -->
-                        </div>
-                    </div>
+            <div class="modal-body settings-tabbed"
+                style="display: flex; gap: 1.5rem; grid-template-columns: none; overflow: hidden; height: 60vh; padding-right: 0;">
+                <!-- Sidebar -->
+                <div class="settings-sidebar"
+                    style="width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; border-right: 1px solid var(--border-color); padding-right: 1.5rem; overflow-y: auto;">
+                    <button class="action-btn small secondary settings-tab-btn" data-tab="settings-general"
+                        style="text-align: left; justify-content: flex-start; border-color: var(--brand-gemini); color: var(--text-primary);">General</button>
+                    <button class="action-btn small danger settings-tab-btn" data-tab="settings-explorer"
+                        style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Workspace</button>
+                    <button class="action-btn small danger settings-tab-btn" data-tab="settings-projects"
+                        style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Saved
+                        Projects</button>
+                    <button class="action-btn small danger settings-tab-btn" data-tab="settings-git"
+                        style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Import
+                        & Git</button>
+                    <button class="action-btn small danger settings-tab-btn" data-tab="settings-localai"
+                        style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Local
+                        AIs</button>
                 </div>
 
-                <div class="settings-column">
-                    <div class="form-group workspace-assignments">
-                        <h4>Current Assignments</h4>
-                        <div class="assignment-row">
-                            <span class="model-badge gemini">Gemini</span>
-                            <input type="text" id="input-gemini-path" readonly placeholder="Default Workspace (~) ">
-                            <button class="action-btn small primary" id="btn-assign-gemini">Assign Focus</button>
+                <!-- Content Area -->
+                <div class="settings-content-area" style="flex: 1; overflow-y: auto; padding-right: 1rem;">
+
+                    <!-- General Tab -->
+                    <div id="settings-general" class="settings-tab-pane"
+                        style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label>Authentication Logins</label>
+                            <p class="help-text">Authenticate AI extensions and tools natively using the terminal.</p>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button class="action-btn small primary" id="btn-login-gemini">Login to Gemini
+                                    CLI</button>
+                                <button class="action-btn small secondary" id="btn-login-claude">Login to Claude
+                                    Code</button>
+                                <button class="action-btn small" id="btn-login-github"
+                                    style="background: rgba(255,255,255,0.1);">Login to GitHub</button>
+                            </div>
                         </div>
-                        <div class="assignment-row">
-                            <span class="model-badge claude">Claude</span>
-                            <input type="text" id="input-claude-path" readonly placeholder="Default Workspace (~)">
-                            <button class="action-btn small secondary" id="btn-assign-claude">Assign Focus</button>
+
+                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <button class="action-btn danger small" id="btn-restart-term">Force Restart Terminal
+                                Process</button>
                         </div>
                     </div>
 
-                    <div class="form-group"
-                        style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
-                        <label>Asset Storage Path</label>
-                        <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
-                        <div class="assignment-row">
-                            <input type="text" id="input-asset-path" readonly placeholder="Same as Workspace">
-                            <button class="action-btn small secondary" id="btn-assign-asset">Set Storage</button>
+                    <!-- Workspace Explorer Tab -->
+                    <div id="settings-explorer" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group workspace-assignments">
+                            <h4>Current Assignments</h4>
+                            <div class="assignment-row">
+                                <span class="model-badge gemini">Gemini</span>
+                                <input type="text" id="input-gemini-path" readonly placeholder="Default Workspace (~) ">
+                                <button class="action-btn small primary" id="btn-assign-gemini">Assign Focus</button>
+                            </div>
+                            <div class="assignment-row">
+                                <span class="model-badge claude">Claude</span>
+                                <input type="text" id="input-claude-path" readonly placeholder="Default Workspace (~)">
+                                <button class="action-btn small secondary" id="btn-assign-claude">Assign Focus</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <label>Asset Storage Path</label>
+                            <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
+                            <div class="assignment-row">
+                                <input type="text" id="input-asset-path" readonly placeholder="Same as Workspace">
+                                <button class="action-btn small secondary" id="btn-assign-asset">Set Storage</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <label>Generated Content Path</label>
+                            <p class="help-text">Where AI-generated output files are saved if not in an active project.
+                            </p>
+                            <div class="assignment-row">
+                                <input type="text" id="input-generated-path" readonly placeholder="Same as Workspace">
+                                <button class="action-btn small secondary" id="btn-assign-generated">Set Path</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group"
-                        style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px dashed var(--brand-gemini); margin-top: 1rem;">
-                        <label>Import Project (ZIP)</label>
-                        <p class="help-text">Unpack a project directly into the active workspace.</p>
-                        <div class="launcher-group">
-                            <button class="action-btn secondary" id="btn-import-zip">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                Upload & Extract ZIP
-                            </button>
-                            <input type="file" id="input-workspace-zip" style="display: none;" accept=".zip">
+                    <!-- Saved Projects Tab -->
+                    <div id="settings-projects" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label>Workspace Explorer</label>
+                            <p class="help-text">Click folders to browse. Create or save paths here.</p>
+                            <div class="browser-container">
+                                <div class="browser-header">
+                                    <button id="btn-up-dir" class="action-btn small secondary"
+                                        title="Go Up One Directory">↑ Up</button>
+                                    <input type="text" id="input-browser-path" class="browser-path-input" readonly
+                                        autocomplete="off">
+                                </div>
+                                <div class="browser-list" id="browser-list"></div>
+                                <div class="browser-actions">
+                                    <input type="text" id="input-new-folder" placeholder="New folder name..."
+                                        autocomplete="off">
+                                    <button id="btn-create-folder" class="action-btn small primary">Create</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <h4>Saved Projects</h4>
+                                <button class="action-btn small primary" id="btn-save-project"
+                                    title="Save current explorer path as a project">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" style="margin-right: 4px;">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                        <polyline points="17 21 17 13 7 13 7 21" />
+                                        <polyline points="7 3 7 8 15 8" />
+                                    </svg>
+                                    Save Current Path
+                                </button>
+                            </div>
+                            <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for
+                                quick assignment.</p>
+                            <div id="saved-projects-list"
+                                style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                                <!-- Saved projects inject here -->
+                            </div>
+
+                            <div
+                                style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Active
+                                    Workspace</label>
+                                <select id="settings-active-workspace-select" class="model-select">
+                                    <option value="">Default (~)</option>
+                                    <!-- Injected via JS -->
+                                </select>
+                                <p class="help-text" style="margin-top: 0.5rem; font-size: 0.75rem;">Select your active
+                                    workspace here to apply it to all models.</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group"
-                        style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
-                        <button class="action-btn danger small" id="btn-restart-term">Force Restart Terminal
-                            Process</button>
+                    <!-- Import & Git Tab -->
+                    <div id="settings-git" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group"
+                            style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px dashed var(--brand-gemini);">
+                            <label>Import Project (ZIP)</label>
+                            <p class="help-text">Unpack a project directly into the active workspace.</p>
+                            <div class="launcher-group">
+                                <button class="action-btn secondary" id="btn-import-zip">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    Upload & Extract ZIP
+                                </button>
+                                <input type="file" id="input-workspace-zip" style="display: none;" accept=".zip">
+                            </div>
+                        </div>
+
+                        <div class="form-group"
+                            style="padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <label>Clone Git Repository</label>
+                            <p class="help-text">Clone an external repository into the active workspace.</p>
+                            <div class="launcher-group"
+                                style="display: flex; gap: 0.5rem; flex-direction: row; align-items: stretch;">
+                                <input type="text" id="input-git-url" placeholder="https://github.com/user/repo.git"
+                                    style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 0.8rem; outline: none;">
+                                <button class="action-btn primary" id="btn-git-clone"
+                                    style="width: auto; padding: 0 1rem; flex-shrink: 0;">Clone</button>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Local AIs Tab -->
+                    <div id="settings-localai" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label>Manage Local Models (Ollama)</label>
+                            <p class="help-text">Models downloaded to the local Proxmox container.</p>
+                            <div id="local-ai-list"
+                                style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                                <!-- AI models injected via JS -->
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
