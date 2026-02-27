@@ -252,10 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             if (path) {
                 socket.emit('terminal.toTerm', { tabId: id, data: `cd "${path}"\r` });
-                const cmd = model ? `${aiName} -m ${model}\r` : `${aiName}\r`;
+                const cmd = (model && model !== '') ? `${aiName} -m ${model}\r` : `${aiName}\r`;
                 setTimeout(() => socket.emit('terminal.toTerm', { tabId: id, data: cmd }), 200);
             } else {
-                const cmd = model ? `${aiName} -m ${model}\r` : `${aiName}\r`;
+                const cmd = (model && model !== '') ? `${aiName} -m ${model}\r` : `${aiName}\r`;
                 socket.emit('terminal.toTerm', { tabId: id, data: cmd });
             }
         }, 500);
@@ -549,11 +549,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = agent.name;
         
         socket.emit('terminal.createTab', id);
-        const term = createTerminalInstance(id, title);
+        const term = createTerminalInstance(id, id === activeTabId ? title : title); // Fix potential title issue
         switchTab(id);
 
         const aiName = agent.model === 'claude' ? 'claude' : 'gemini';
-        const modelArg = aiName === 'gemini' ? ` -m ${agent.model}` : '';
+        const modelArg = (agent.model && agent.model !== '' && agent.model !== 'claude') ? ` -m ${agent.model}` : '';
         const path = assignedPaths[aiName];
 
         setTimeout(() => {
