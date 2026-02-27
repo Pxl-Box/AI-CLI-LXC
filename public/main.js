@@ -315,7 +315,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-clear').addEventListener('click', () => {
-        sendCommand('clear');
+        const active = terminals.get(activeTabId);
+        if (active) {
+            active.term.clear();
+            // Send Ctrl+L to trigger a prompt redraw in the underlying shell/REPL
+            socket.emit("terminal.toTerm", { tabId: activeTabId, data: "\x0c" });
+            active.term.focus();
+        }
     });
 
     // --- Workspace Explorer Logic --- //
