@@ -429,9 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputUpload.value = '';
                 loadDirectory(targetDir); // Refresh view
 
-                // Automatically mention the file in the terminal
-                const fileNames = Array.from(inputUpload.files).map(f => f.name).join(', ');
-                socket.emit("terminal.toTerm", { tabId: activeTabId, data: fileNames });
+                // Automatically mention the file in the terminal with the requested format
+                const fileNames = Array.from(inputUpload.files).map(f => `"${f.name}"`).join(', ');
+                const attachmentMsg = `Attached files: ${fileNames}\r`;
+                socket.emit("terminal.toTerm", { tabId: activeTabId, data: attachmentMsg });
             }
         } catch (err) {
             console.error("Upload failed:", err);
@@ -473,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                     <span>${file.name}</span>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: '${file.name}' }); generatedModal.classList.remove('active');">Mention</button>
+                        <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); generatedModal.classList.remove('active');">Mention</button>
                         <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
                     </div>
                 </div>
