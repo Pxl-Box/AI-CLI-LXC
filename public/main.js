@@ -600,6 +600,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tabId === 'settings-localai') {
             socket.emit('ollama.listModels');
         }
+        if (tabId === 'settings-explorer') {
+            loadDirectory(currentBrowserPath || '');
+            if (typeof renderSavedProjects === 'function') renderSavedProjects();
+        }
     };
 
     settingsTabs.forEach(btn => {
@@ -688,110 +692,69 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderSavedProjects = () => {
-        const container = document.getElementById('saved-projects-list');
-        if (!container) return; // UI might not be there
+        const sel = document.getElementById('saved-projects-list');
+        if (!sel) return;
 
-        container.innerHTML = '';
-        if (savedProjects.length === 0) {
-            container.innerHTML = '<div class="help-text" style="font-style: italic;">No saved projects yet. Navigate to a folder and save it!</div>';
-            return;
-        }
+        // Populate projects dropdown
+        sel.innerHTML = savedProjects.length === 0
+            ? '<option value="">-- no projects saved --</option>'
+            : savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
 
-        savedProjects.forEach((proj, idx) => {
-            const div = document.createElement('div');
-            div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px;';
-
-            // Name / Path display
-            const infoDiv = document.createElement('div');
-            infoDiv.style.cssText = 'flex: 1; min-width: 0; margin-right: 0.5rem;';
-            infoDiv.innerHTML = `
-                <div style="font-weight: 500; font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.name}</div>
-                <div style="font-size: 0.7rem; color: var(--text-secondary); font-family: 'Fira Code', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.path}</div>
-            `;
-
-            // Actions
-            const actionsDiv = document.createElement('div');
-            actionsDiv.style.cssText = 'display: flex; gap: 0.25rem; flex-shrink: 0;';
-
-            // Delete
-            const btnDelete = document.createElement('button');
-            btnDelete.className = 'icon-btn';
-            btnDelete.style.cssText = 'padding: 0.2rem; color: var(--text-secondary); margin-left: 0.25rem;';
-            btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
-            btnDelete.title = "Remove Project";
-            btnDelete.onclick = () => {
-                if (confirm(`Remove "${proj.name}" from saved projects?`)) {
-                    savedProjects.splice(idx, 1);
-                    saveSavedProjects();
-                }
-            };
-
-            actionsDiv.appendChild(btnDelete);
-
-            div.appendChild(infoDiv);
-            div.appendChild(actionsDiv);
-            container.appendChild(div);
-        });
-
-        // Populate Active Workspace Dropdown (Sidebar)
+        // Sync active workspace dropdowns
         const activeWsSelect = document.getElementById('active-workspace-select');
-        // Populate Active Workspace Dropdown (Settings Modal)
         const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
-
         [activeWsSelect, settingsActiveWsSelect].forEach(selectEl => {
-            if (selectEl) {
-                const currentSelection = selectEl.value;
-                selectEl.innerHTML = '<option value="">Default (~)</option>';
-                savedProjects.forEach(proj => {
-                    const opt = document.createElement('option');
-                    opt.value = proj.path;
-                    opt.textContent = proj.name;
-                    selectEl.appendChild(opt);
-                });
-                // Try to retain previous selection
-                if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
-                    selectEl.value = currentSelection;
-                }
-
-                // Sync the two dropdowns when one changes
-                selectEl.addEventListener('change', (e) => {
-                    if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = e.target.value;
-                    if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = e.target.value;
-                });
+            if (!selectEl) return;
+            const currentSelection = selectEl.value;
+            selectEl.innerHTML = '<option value="">Default (~)</option>' +
+                savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
+            if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
+                selectEl.value = currentSelection;
             }
+            selectEl.addEventListener('change', (e) => {
+                if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = e.target.value;
+                if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = e.target.value;
+            });
         });
     };
 
     const btnSaveProject = document.getElementById('btn-save-project');
     if (btnSaveProject) {
         btnSaveProject.addEventListener('click', () => {
-            if (!currentBrowserPath) {
-                alert("Please navigate to a valid folder first in the workspace explorer above.");
-                return;
-            }
-
-            // Check if already exists
-            if (savedProjects.find(p => p.path === currentBrowserPath)) {
-                alert("This path is already saved as a project.");
-                return;
-            }
-
-            // Default name to the last folder in the path
+            if (!currentBrowserPath) { alert('Navigate to a folder first.'); return; }
+            if (savedProjects.find(p => p.path === currentBrowserPath)) { alert('Already saved.'); return; }
             const defaultName = currentBrowserPath.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() || 'Root';
-
-            const name = prompt(`Enter a name for this project:\n${currentBrowserPath}`, defaultName);
+            const name = prompt(`Name this project (${currentBrowserPath}):`, defaultName);
             if (name) {
-                savedProjects.push({
-                    name: name.trim(),
-                    path: currentBrowserPath,
-                    added: new Date().toISOString()
-                });
+                savedProjects.push({ name: name.trim(), path: currentBrowserPath, added: new Date().toISOString() });
                 saveSavedProjects();
             }
         });
     }
 
-    // Initialize
+    // Load button
+    const btnLoadProject = document.getElementById('btn-load-project');
+    if (btnLoadProject) {
+        btnLoadProject.addEventListener('click', () => {
+            const sel = document.getElementById('saved-projects-list');
+            if (sel && sel.value) loadDirectory(sel.value);
+        });
+    }
+
+    // Delete button
+    const btnDeleteProject = document.getElementById('btn-delete-project');
+    if (btnDeleteProject) {
+        btnDeleteProject.addEventListener('click', () => {
+            const sel = document.getElementById('saved-projects-list');
+            if (!sel || !sel.value) return;
+            if (confirm(`Remove "${sel.options[sel.selectedIndex].text}" from saved projects?`)) {
+                savedProjects = savedProjects.filter(p => p.path !== sel.value);
+                saveSavedProjects();
+            }
+        });
+    }
+
+    // Initialize saved projects
     loadSavedProjects();
 
     // --- Upload & Workspace Explorer Logic ---

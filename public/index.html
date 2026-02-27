@@ -364,6 +364,42 @@
                                 <button class="action-btn small secondary" id="btn-assign-generated">Set</button>
                             </div>
                         </div>
+
+                        <!-- Saved Projects (merged) -->
+                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="margin: 0;">Saved Projects</label>
+                                <button class="action-btn small primary" id="btn-save-project"
+                                    title="Bookmark current browser path">+ Save Path</button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <select id="saved-projects-list" class="model-select"
+                                    style="flex: 1; font-family: 'Fira Code', monospace; font-size: 0.8rem;">
+                                    <option value="">-- no projects saved --</option>
+                                </select>
+                                <button id="btn-load-project" class="action-btn small secondary"
+                                    style="flex-shrink: 0;">Load</button>
+                                <button id="btn-delete-project" class="icon-btn" title="Delete selected project"
+                                    style="flex-shrink: 0; padding: 0.35rem; color: var(--danger);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M3 6h18" />
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div style="margin-top: 0.6rem;">
+                                <label
+                                    style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem;">Active
+                                    Workspace</label>
+                                <select id="settings-active-workspace-select" class="model-select">
+                                    <option value="">Default (~)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Saved Projects Tab -->
