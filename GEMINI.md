@@ -25,6 +25,7 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **PTY Isolation:** Every terminal tab MUST have `/usr/local/bin` explicitly injected into its environment PATH to ensure seamless access to Ollama.
 - **Terminal Utilities:** The "Clear Terminal" button MUST automatically execute `/clear` for AI CLIs and `clear` for standard shells using `\r\n`.
 - **System Monitoring:** The header MUST display a real-time "System Pulse" showing CPU and RAM utilization for the host container.
+- **Session Resilience:** I MUST maintain a `.gemini_recovery.json` file in the workspace root. This file acts as a "Black Box" recorder. In the event of a session crash, the next AI instance MUST read this file during the Research phase to immediately resume work without user intervention.
 
 ## Recent Progress (Session: Feb 27, 2026 - Part 4)
 - **Real-time Monitoring & UI:**
@@ -43,6 +44,8 @@ This directory is the primary workspace for maintaining and extending the web-ba
     - **In-modal Folder Creation:** Streamlined directory management within the explorer.
 - **Local LLM Integration:**
     - **Live Ollama Sync:** Dynamically populates the model selection dropdown from the host container's installed models.
+- **Reliability & Resilience:**
+    - **Black Box Recovery:** Implemented `.gemini_recovery.json` for autonomous state recovery across AI session crashes.
 - **Dependency Management:**
     - Added `unzipper`, `systeminformation`, and Prism.js integration.
 
