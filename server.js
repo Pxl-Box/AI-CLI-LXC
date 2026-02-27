@@ -62,12 +62,18 @@ io.on('connection', (socket) => {
             ptyProcesses.get(tabId).kill();
         }
         
+        // Ensure /usr/local/bin is in the PATH for spawned processes (critical for Ollama)
+        const env = { ...process.env };
+        if (!env.PATH.includes('/usr/local/bin')) {
+            env.PATH = `${env.PATH}:/usr/local/bin`;
+        }
+
         const ptyProcess = pty.spawn(shell, [], {
             name: 'xterm-color',
             cols: 80,
             rows: 24,
             cwd: currentCwd,
-            env: process.env
+            env: env
         });
 
         ptyProcess.onData((data) => {
