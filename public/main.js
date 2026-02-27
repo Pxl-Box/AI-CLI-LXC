@@ -395,7 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('fs.createDir.response', (data) => {
-        if (data.success) { inputNewFolder.value = ''; loadDirectory(data.newPath); }
+        if (data.success) { 
+            inputNewFolder.value = ''; 
+            loadDirectory(currentBrowserPath); 
+            // Also refresh explorer if it's open
+            if (generatedModal.classList.contains('active')) {
+                openExplorer(explorerCurrentPath);
+            }
+        }
     });
 
     document.getElementById('btn-assign-gemini').addEventListener('click', () => {
@@ -425,12 +432,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCloseGenerated = document.getElementById('btn-close-generated');
     const explorerPathEl = document.getElementById('explorer-current-path');
     const btnExplorerUp = document.getElementById('btn-explorer-up');
+    const btnExplorerMkdir = document.getElementById('btn-explorer-mkdir');
     const btnMentionAll = document.getElementById('btn-mention-all');
+    const btnMentionSelected = document.getElementById('btn-mention-selected');
+    const selectionCountEl = document.getElementById('explorer-selection-count');
     const inputExplorerSearch = document.getElementById('input-explorer-search');
 
     let explorerCurrentPath = '';
     let explorerFiles = [];
     let explorerFolders = [];
+    let selectedFiles = new Set();
+
+    const updateSelectionUI = () => {
+        const count = selectedFiles.size;
+        selectionCountEl.textContent = `${count} file${count !== 1 ? 's' : ''} selected`;
+        btnMentionSelected.disabled = count === 0;
+    };
 
     const renderExplorer = (query = '') => {
         generatedList.innerHTML = '';
@@ -450,16 +467,30 @@ document.addEventListener('DOMContentLoaded', () => {
         filteredFiles.forEach(file => {
             const div = document.createElement('div');
             div.className = 'browser-item';
+            const isSelected = selectedFiles.has(file.name);
             div.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                    <span>${file.name}</span>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); document.getElementById('generated-modal').classList.remove('active');">Mention</button>
-                        <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
+                <input type="checkbox" class="file-checkbox" ${isSelected ? 'checked' : ''} data-name="${file.name}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 16px;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; min-width: 0;">
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 0.5rem;">${file.name}</span>
+                    <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                        <button class="action-btn small secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\\r' }); document.getElementById('generated-modal').classList.remove('active');">Mention</button>
+                        <button class="action-btn small primary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); window.location.href='/download?path=${encodeURIComponent(file.path)}'">Down</button>
                     </div>
                 </div>
             `;
+            
+            // Toggle selection on click
+            div.onclick = (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                const checkbox = div.querySelector('.file-checkbox');
+                if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+                
+                if (checkbox.checked) selectedFiles.add(file.name);
+                else selectedFiles.delete(file.name);
+                updateSelectionUI();
+            };
+            
             generatedList.appendChild(div);
         });
     };
@@ -549,6 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
         explorerCurrentPath = path;
         explorerPathEl.textContent = path;
         inputExplorerSearch.value = ''; // Reset search on folder change
+        selectedFiles.clear(); // Reset selection on folder change
+        updateSelectionUI();
         socket.emit('fs.list', path);
         generatedModal.classList.add('active');
     };
@@ -565,6 +598,20 @@ document.addEventListener('DOMContentLoaded', () => {
             parts.pop();
             openExplorer(parts.join('/') || '/');
         }
+    };
+
+    btnExplorerMkdir.onclick = () => {
+        const name = prompt("Enter new folder name:");
+        if (name && explorerCurrentPath) {
+            socket.emit('fs.createDir', { parentPath: explorerCurrentPath, folderName: name });
+        }
+    };
+
+    btnMentionSelected.onclick = () => {
+        if (selectedFiles.size === 0) return;
+        const names = Array.from(selectedFiles).map(name => `"${name}"`).join(', ');
+        socket.emit('terminal.toTerm', { tabId: activeTabId, data: `Attached files: ${names}\r` });
+        generatedModal.classList.remove('active');
     };
 
     btnMentionAll.onclick = () => {
@@ -727,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = agent.name;
         
         socket.emit('terminal.createTab', id);
-        const term = createTerminalInstance(id, id === activeTabId ? title : title); // Fix potential title issue
+        createTerminalInstance(id, title);
         switchTab(id);
 
         const aiName = agent.model === 'claude' ? 'claude' : 'gemini';

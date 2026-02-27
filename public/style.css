@@ -712,6 +712,14 @@ body {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.file-checkbox {
+    margin-right: 0.5rem;
+    cursor: pointer;
+    accent-color: var(--brand-gemini);
+    width: 14px;
+    height: 14px;
+}
+
 .browser-actions {
     display: flex;
     padding: 0.5rem;
