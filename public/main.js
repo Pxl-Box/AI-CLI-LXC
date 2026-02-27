@@ -560,34 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="font-size: 0.7rem; color: var(--text-secondary); font-family: 'Fira Code', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.path}</div>
             `;
 
-            // Actions
-            const actionsDiv = document.createElement('div');
-            actionsDiv.style.cssText = 'display: flex; gap: 0.25rem; flex-shrink: 0;';
-
-            // Assign Gemini
-            const btnGemini = document.createElement('button');
-            btnGemini.className = 'action-btn small';
-            btnGemini.style.cssText = 'padding: 0.2rem 0.4rem; font-size: 0.7rem; background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: var(--brand-gemini);';
-            btnGemini.innerHTML = '<span class="model-badge gemini" style="padding: 0.1rem 0.3rem; margin: 0; background: transparent;">Gemini</span>';
-            btnGemini.title = "Assign to Gemini";
-            btnGemini.onclick = () => {
-                assignedPaths.gemini = proj.path;
-                localStorage.setItem('ai-workspace-gemini', proj.path);
-                document.getElementById('input-gemini-path').value = proj.path;
-            };
-
-            // Assign Claude
-            const btnClaude = document.createElement('button');
-            btnClaude.className = 'action-btn small';
-            btnClaude.style.cssText = 'padding: 0.2rem 0.4rem; font-size: 0.7rem; background: rgba(217, 119, 87, 0.1); border-color: rgba(217, 119, 87, 0.3); color: var(--brand-claude);';
-            btnClaude.innerHTML = '<span class="model-badge claude" style="padding: 0.1rem 0.3rem; margin: 0; background: transparent;">Claude</span>';
-            btnClaude.title = "Assign to Claude";
-            btnClaude.onclick = () => {
-                assignedPaths.claude = proj.path;
-                localStorage.setItem('ai-workspace-claude', proj.path);
-                document.getElementById('input-claude-path').value = proj.path;
-            };
-
             // Delete
             const btnDelete = document.createElement('button');
             btnDelete.className = 'icon-btn';
@@ -601,8 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            actionsDiv.appendChild(btnGemini);
-            actionsDiv.appendChild(btnClaude);
             actionsDiv.appendChild(btnDelete);
 
             div.appendChild(infoDiv);

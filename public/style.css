@@ -637,7 +637,13 @@ body {
     align-items: start;
 }
 
-.modal-body>.form-group {
+.settings-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-column>.form-group {
     margin-bottom: 0;
 }
 

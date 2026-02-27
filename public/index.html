@@ -259,99 +259,106 @@
                 <button class="close-btn" id="btn-close-settings">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Workspace Explorer</label>
-                    <p class="help-text">Click folders to browse. Assign workspaces to automatically isolate context.
-                    </p>
+                <div class="settings-column">
+                    <div class="form-group">
+                        <label>Workspace Explorer</label>
+                        <p class="help-text">Click folders to browse. Assign workspaces to automatically isolate
+                            context.
+                        </p>
 
-                    <div class="browser-container">
-                        <div class="browser-header">
-                            <button id="btn-up-dir" class="action-btn small secondary" title="Go Up One Directory">↑
-                                Up</button>
-                            <input type="text" id="input-browser-path" class="browser-path-input" readonly
-                                autocomplete="off">
+                        <div class="browser-container">
+                            <div class="browser-header">
+                                <button id="btn-up-dir" class="action-btn small secondary" title="Go Up One Directory">↑
+                                    Up</button>
+                                <input type="text" id="input-browser-path" class="browser-path-input" readonly
+                                    autocomplete="off">
+                            </div>
+                            <div class="browser-list" id="browser-list">
+                                <!-- Folders inject here -->
+                            </div>
+                            <div class="browser-actions">
+                                <input type="text" id="input-new-folder" placeholder="New folder name..."
+                                    autocomplete="off">
+                                <button id="btn-create-folder" class="action-btn small primary">Create</button>
+                            </div>
                         </div>
-                        <div class="browser-list" id="browser-list">
-                            <!-- Folders inject here -->
+                    </div>
+
+                    <div class="form-group"
+                        style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <h4>Saved Projects</h4>
+                            <button class="action-btn small primary" id="btn-save-project"
+                                title="Save current explorer path as a project">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" style="margin-right: 4px;">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <polyline points="17 21 17 13 7 13 7 21" />
+                                    <polyline points="7 3 7 8 15 8" />
+                                </svg>
+                                Save Current Path
+                            </button>
                         </div>
-                        <div class="browser-actions">
-                            <input type="text" id="input-new-folder" placeholder="New folder name..."
-                                autocomplete="off">
-                            <button id="btn-create-folder" class="action-btn small primary">Create</button>
+                        <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for quick
+                            assignment.</p>
+                        <div id="saved-projects-list"
+                            style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                            <!-- Saved projects inject here -->
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group workspace-assignments">
-                    <h4>Current Assignments</h4>
-                    <div class="assignment-row">
-                        <span class="model-badge gemini">Gemini</span>
-                        <input type="text" id="input-gemini-path" readonly placeholder="Default Workspace (~) ">
-                        <button class="action-btn small primary" id="btn-assign-gemini">Assign Focus</button>
+                <div class="settings-column">
+                    <div class="form-group workspace-assignments">
+                        <h4>Current Assignments</h4>
+                        <div class="assignment-row">
+                            <span class="model-badge gemini">Gemini</span>
+                            <input type="text" id="input-gemini-path" readonly placeholder="Default Workspace (~) ">
+                            <button class="action-btn small primary" id="btn-assign-gemini">Assign Focus</button>
+                        </div>
+                        <div class="assignment-row">
+                            <span class="model-badge claude">Claude</span>
+                            <input type="text" id="input-claude-path" readonly placeholder="Default Workspace (~)">
+                            <button class="action-btn small secondary" id="btn-assign-claude">Assign Focus</button>
+                        </div>
                     </div>
-                    <div class="assignment-row">
-                        <span class="model-badge claude">Claude</span>
-                        <input type="text" id="input-claude-path" readonly placeholder="Default Workspace (~)">
-                        <button class="action-btn small secondary" id="btn-assign-claude">Assign Focus</button>
-                    </div>
-                </div>
 
-                <div class="form-group"
-                    style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <h4>Saved Projects</h4>
-                        <button class="action-btn small primary" id="btn-save-project"
-                            title="Save current explorer path as a project">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" style="margin-right: 4px;">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                <polyline points="17 21 17 13 7 13 7 21" />
-                                <polyline points="7 3 7 8 15 8" />
-                            </svg>
-                            Save Current Path
-                        </button>
+                    <div class="form-group"
+                        style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
+                        <label>Asset Storage Path</label>
+                        <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
+                        <div class="assignment-row">
+                            <input type="text" id="input-asset-path" readonly placeholder="Same as Workspace">
+                            <button class="action-btn small secondary" id="btn-assign-asset">Set Storage</button>
+                        </div>
                     </div>
-                    <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for quick
-                        assignment.</p>
-                    <div id="saved-projects-list"
-                        style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
-                        <!-- Saved projects inject here -->
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label>Asset Storage Path</label>
-                    <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
-                    <div class="assignment-row">
-                        <input type="text" id="input-asset-path" readonly placeholder="Same as Workspace">
-                        <button class="action-btn small secondary" id="btn-assign-asset">Set Storage</button>
+                    <div class="form-group"
+                        style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px dashed var(--brand-gemini); margin-top: 1rem;">
+                        <label>Import Project (ZIP)</label>
+                        <p class="help-text">Unpack a project directly into the active workspace.</p>
+                        <div class="launcher-group">
+                            <button class="action-btn secondary" id="btn-import-zip">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Upload & Extract ZIP
+                            </button>
+                            <input type="file" id="input-workspace-zip" style="display: none;" accept=".zip">
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group"
-                    style="background: rgba(139, 92, 246, 0.05); padding: 1rem; border-radius: 8px; border: 1px dashed var(--brand-gemini);">
-                    <label>Import Project (ZIP)</label>
-                    <p class="help-text">Unpack a project directly into the active workspace.</p>
-                    <div class="launcher-group">
-                        <button class="action-btn secondary" id="btn-import-zip">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Upload & Extract ZIP
-                        </button>
-                        <input type="file" id="input-workspace-zip" style="display: none;" accept=".zip">
+                    <div class="form-group"
+                        style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+                        <button class="action-btn danger small" id="btn-restart-term">Force Restart Terminal
+                            Process</button>
                     </div>
-                </div>
-
-                <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <button class="action-btn danger small" id="btn-restart-term">Force Restart Terminal
-                        Process</button>
                 </div>
             </div>
         </div>
