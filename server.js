@@ -5,6 +5,7 @@ const pty = require('node-pty');
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,8 +13,38 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 
+// Configure Multer for dynamic uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const targetDir = req.query.targetDir || process.env.HOME || process.env.USERPROFILE;
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+        cb(null, targetDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+const upload = multer({ storage: storage });
+
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Upload endpoint
+app.post('/upload', upload.array('files'), (req, res) => {
+    res.json({ success: true, message: 'Files uploaded successfully' });
+});
+
+// Download endpoint
+app.get('/download', (req, res) => {
+    const filePath = req.query.path;
+    if (filePath && fs.existsSync(filePath)) {
+        res.download(filePath);
+    } else {
+        res.status(404).send('File not found');
+    }
+});
 
 io.on('connection', (socket) => {
     console.log(`[+] Client connected: ${socket.id}`);
@@ -133,6 +164,28 @@ io.on('connection', (socket) => {
             socket.emit('fs.createDir.response', { success: true, newPath: targetPath });
         } catch (error) {
             socket.emit('fs.createDir.response', { success: false, error: error.message });
+        }
+    });
+
+    socket.on('fs.listGenerated', (workspacePath) => {
+        try {
+            const genPath = path.join(workspacePath, 'generated');
+            if (!fs.existsSync(genPath)) {
+                return socket.emit('fs.listGenerated.response', { path: genPath, files: [] });
+            }
+
+            const items = fs.readdirSync(genPath, { withFileTypes: true });
+            const files = items
+                .filter(item => item.isFile())
+                .map(item => ({
+                    name: item.name,
+                    path: path.join(genPath, item.name),
+                    size: fs.statSync(path.join(genPath, item.name)).size
+                }));
+
+            socket.emit('fs.listGenerated.response', { path: genPath, files });
+        } catch (error) {
+            socket.emit('fs.listGenerated.response', { error: error.message, files: [] });
         }
     });
 

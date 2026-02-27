@@ -27,12 +27,11 @@ This directory is the primary workspace for maintaining and extending the web-ba
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
 ## Recent Progress (Session: Feb 27, 2026)
-- **Model Selection Expansion:** Updated the Gemini model selection to include specific tiers:
-    - Gemini 3.1 Pro (Preview)
-    - Gemini 3 Flash (Preview)
-    - Gemini 2.5 Pro
-    - Gemini 2.5 Flash
-    - Gemini 2.5 Flash Lite
+- **Asset Management System:**
+    - **Upload Integration:** Added a "Upload Asset" button in the sidebar that saves files directly to the currently active workspace directory.
+    - **Generated Content Hub:** Implemented a "Generated Content" explorer that lists and allows downloading of files from a `generated/` folder within the workspace.
+    - **Backend Uploads:** Integrated `multer` in `server.js` to handle multi-file uploads with dynamic destination paths.
+- **Model Selection Expansion:** Updated the Gemini model selection to include specific tiers (3.1 Pro, 3 Flash, 2.5 Pro/Flash/Lite).
 - **Usage Tracking Alignment:** Adjusted the real-time usage dashboard and logic to track activity across these specific Gemini 3.x and 2.5 series models.
 - **Frontend Refinement:** Updated the "Start Gemini CLI" launcher and "Agents" creation modal to support these specific model names via the `-m` flag.
 

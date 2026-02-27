@@ -324,6 +324,89 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-claude-path').value = currentBrowserPath;
     });
 
+    // --- Upload & Generated Content Logic ---
+    const btnUpload = document.getElementById('btn-upload');
+    const inputUpload = document.getElementById('input-upload');
+    const btnGenerated = document.getElementById('btn-generated');
+    const generatedModal = document.getElementById('generated-modal');
+    const generatedList = document.getElementById('generated-list');
+    const btnCloseGenerated = document.getElementById('btn-close-generated');
+
+    btnUpload.onclick = () => {
+        inputUpload.click();
+    };
+
+    inputUpload.onchange = async () => {
+        if (!inputUpload.files.length) return;
+        
+        const targetDir = currentBrowserPath || assignedPaths.gemini || '';
+        if (!targetDir) {
+            alert("Please select or assign a workspace folder first!");
+            return;
+        }
+
+        const formData = new FormData();
+        for (const file of inputUpload.files) {
+            formData.append('files', file);
+        }
+
+        try {
+            const resp = await fetch(`/upload?targetDir=${encodeURIComponent(targetDir)}`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await resp.json();
+            if (result.success) {
+                alert("Upload successful!");
+                inputUpload.value = '';
+                loadDirectory(targetDir); // Refresh view
+            }
+        } catch (err) {
+            console.error("Upload failed:", err);
+            alert("Upload failed.");
+        }
+    };
+
+    btnGenerated.onclick = () => {
+        const workspace = currentBrowserPath || assignedPaths.gemini || '';
+        if (!workspace) {
+            alert("Select a workspace first!");
+            return;
+        }
+        socket.emit('fs.listGenerated', workspace);
+        generatedModal.classList.add('active');
+    };
+
+    btnCloseGenerated.onclick = () => {
+        generatedModal.classList.remove('active');
+    };
+
+    socket.on('fs.listGenerated.response', (data) => {
+        if (data.error) {
+            generatedList.innerHTML = `<div class="help-text">Error: ${data.error}</div>`;
+            return;
+        }
+        
+        generatedList.innerHTML = '';
+        if (data.files.length === 0) {
+            generatedList.innerHTML = `<div class="help-text">No generated files found in ${data.path}</div>`;
+            return;
+        }
+
+        data.files.forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'browser-item';
+            div.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${file.name}</span>
+                    <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
+                </div>
+            `;
+            generatedList.appendChild(div);
+        });
+    });
+
     document.getElementById('btn-restart-term').addEventListener('click', () => {
         socket.emit('terminal.restart', activeTabId);
         settingsModal.classList.remove('active');
