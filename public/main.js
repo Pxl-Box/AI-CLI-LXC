@@ -1148,6 +1148,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = agentModal.querySelector('h3');
     let editingAgentName = null;
 
+    const loadAgents = () => {
+        socket.emit('agents.list');
+    };
+
     const openAgentModal = (agent = null) => {
         if (agent) {
             editingAgentName = agent.name;
