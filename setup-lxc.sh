@@ -27,7 +27,7 @@ fi
 
 # 2. Install Dependencies
 echo "[2/6] Checking dependencies..."
-apt install -y curl git build-essential python3 > /dev/null 2>&1
+apt install -y curl git build-essential python3 zstd > /dev/null 2>&1
 
 # 3. Install Node.js v20 (Check if already installed)
 echo "[3/6] Checking Node.js (v20)..."
