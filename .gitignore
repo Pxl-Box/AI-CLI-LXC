@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+.env
+.gemini_recovery.json
+*.zip
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.git/
