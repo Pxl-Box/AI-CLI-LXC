@@ -27,6 +27,10 @@ This directory is the primary workspace for maintaining and extending the web-ba
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
 ## Recent Progress (Session: Feb 27, 2026)
+- **Local LLM Integration (Ollama):**
+    - **Launcher Section:** Added a dedicated "Local LLMs (Ollama)" section in the sidebar with model selection (DeepSeek R1, Llama 3, etc.).
+    - **One-Click Execution:** Implemented "Run" and "Pull" buttons that automatically open new terminal tabs and execute the corresponding Ollama commands.
+    - **Resource Feedback:** Integrated local LLM activity into the usage tracking bars.
 - **Asset Management System:**
     - **Upload Integration:** Added a "Upload Asset" button in the sidebar that saves files directly to the currently active workspace directory.
     - **Generated Content Hub:** Implemented a "Generated Content" explorer that lists and allows downloading of files from a `generated/` folder within the workspace.

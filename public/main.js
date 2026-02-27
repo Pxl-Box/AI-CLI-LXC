@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (title.includes("gemini-2.5") || title.includes("(2.5")) {
                 updateUsageBar("gemini-2.5", 15);
             }
-        } else if (title.includes("claude")) {
+        } else if (title.includes("claude") || title.includes("ollama")) {
             updateUsageBar("claude", 25);
         }
     };
@@ -245,6 +245,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-claude').addEventListener('click', () => {
         startAI('claude', assignedPaths.claude, 'claude');
+    });
+
+    // --- Local LLM (Ollama) Logic ---
+    document.getElementById('btn-run-local').addEventListener('click', () => {
+        const model = document.getElementById('local-model-select').value;
+        const id = `ollama-${Math.random().toString(36).substr(2, 5)}`;
+        socket.emit('terminal.createTab', id);
+        createTerminalInstance(id, `Ollama: ${model}`);
+        switchTab(id);
+
+        setTimeout(() => {
+            socket.emit('terminal.toTerm', { tabId: id, data: `ollama run ${model}\r` });
+        }, 500);
+    });
+
+    document.getElementById('btn-pull-local').addEventListener('click', () => {
+        const model = document.getElementById('local-model-select').value;
+        const id = `ollama-pull-${Math.random().toString(36).substr(2, 5)}`;
+        socket.emit('terminal.createTab', id);
+        createTerminalInstance(id, `Pulling: ${model}`);
+        switchTab(id);
+
+        setTimeout(() => {
+            socket.emit('terminal.toTerm', { tabId: id, data: `ollama pull ${model}\r` });
+        }, 500);
     });
 
     document.getElementById('btn-commit').addEventListener('click', () => {
