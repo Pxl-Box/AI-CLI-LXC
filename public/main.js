@@ -198,11 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Quick Action Buttons --- //
     const assignedPaths = {
         gemini: localStorage.getItem('ai-workspace-gemini') || '',
-        claude: localStorage.getItem('ai-workspace-claude') || ''
+        claude: localStorage.getItem('ai-workspace-claude') || '',
+        assets: localStorage.getItem('ai-workspace-assets') || ''
     };
 
     if (assignedPaths.gemini) document.getElementById('input-gemini-path').value = assignedPaths.gemini;
     if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
+    if (assignedPaths.assets) document.getElementById('input-asset-path').value = assignedPaths.assets;
 
     const sendCommand = (cmd) => {
         socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
@@ -392,13 +394,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-claude-path').value = currentBrowserPath;
     });
 
-    // --- Upload & Generated Content Logic ---
+    document.getElementById('btn-assign-asset').addEventListener('click', () => {
+        assignedPaths.assets = currentBrowserPath;
+        localStorage.setItem('ai-workspace-assets', currentBrowserPath);
+        document.getElementById('input-asset-path').value = currentBrowserPath;
+    });
+
+    // --- Upload & Workspace Explorer Logic ---
     const btnUpload = document.getElementById('btn-upload');
     const inputUpload = document.getElementById('input-upload');
     const btnGenerated = document.getElementById('btn-generated');
     const generatedModal = document.getElementById('generated-modal');
     const generatedList = document.getElementById('generated-list');
     const btnCloseGenerated = document.getElementById('btn-close-generated');
+    const explorerPathEl = document.getElementById('explorer-current-path');
+    const btnExplorerUp = document.getElementById('btn-explorer-up');
+    const btnMentionAll = document.getElementById('btn-mention-all');
+
+    let explorerCurrentPath = '';
+    let explorerFiles = [];
 
     btnUpload.onclick = () => {
         inputUpload.click();
@@ -407,9 +421,9 @@ document.addEventListener('DOMContentLoaded', () => {
     inputUpload.onchange = async () => {
         if (!inputUpload.files.length) return;
         
-        const targetDir = currentBrowserPath || assignedPaths.gemini || '';
+        const targetDir = assignedPaths.assets || currentBrowserPath || assignedPaths.gemini || '';
         if (!targetDir) {
-            alert("Please select or assign a workspace folder first!");
+            alert("Please select or assign a storage path first!");
             return;
         }
 
@@ -427,9 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert("Upload successful!");
                 inputUpload.value = '';
-                loadDirectory(targetDir); // Refresh view
+                loadDirectory(targetDir); 
 
-                // Automatically mention the file in the terminal with the requested format
                 const fileNames = Array.from(inputUpload.files).map(f => `"${f.name}"`).join(', ');
                 const attachmentMsg = `Attached files: ${fileNames}\r`;
                 socket.emit("terminal.toTerm", { tabId: activeTabId, data: attachmentMsg });
@@ -440,46 +453,117 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    btnGenerated.onclick = () => {
-        const workspace = currentBrowserPath || assignedPaths.gemini || '';
-        if (!workspace) {
-            alert("Select a workspace first!");
-            return;
+    // --- ZIP Import Logic ---
+    const btnImportZip = document.getElementById('btn-import-zip');
+    const inputWorkspaceZip = document.getElementById('input-workspace-zip');
+
+    btnImportZip.onclick = () => inputWorkspaceZip.click();
+    inputWorkspaceZip.onchange = async () => {
+        if (!inputWorkspaceZip.files[0]) return;
+        const targetDir = currentBrowserPath || assignedPaths.gemini || '';
+        if (!targetDir) { alert("Select a target workspace in the explorer first!"); return; }
+
+        const formData = new FormData();
+        formData.append('workspaceZip', inputWorkspaceZip.files[0]);
+
+        try {
+            btnImportZip.disabled = true;
+            btnImportZip.textContent = "Extracting...";
+            const resp = await fetch(`/upload-workspace?targetDir=${encodeURIComponent(targetDir)}`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await resp.json();
+            if (result.success) {
+                alert("Project imported successfully!");
+                loadDirectory(targetDir);
+            }
+            btnImportZip.disabled = false;
+            btnImportZip.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload & Extract ZIP`;
+        } catch (err) {
+            alert("Import failed.");
+            btnImportZip.disabled = false;
         }
-        socket.emit('fs.listGenerated', workspace);
+    };
+
+    // --- Workspace Explorer Navigation ---
+    const openExplorer = (path) => {
+        explorerCurrentPath = path;
+        explorerPathEl.textContent = path;
+        socket.emit('fs.list', path);
         generatedModal.classList.add('active');
+    };
+
+    btnGenerated.onclick = () => {
+        const startPath = currentBrowserPath || assignedPaths.gemini || '';
+        if (!startPath) { alert("Select a workspace folder first!"); return; }
+        openExplorer(startPath);
+    };
+
+    btnExplorerUp.onclick = () => {
+        if (explorerCurrentPath) {
+            const parts = explorerCurrentPath.replace(/\\/g, '/').replace(/\/$/, '').split('/');
+            parts.pop();
+            openExplorer(parts.join('/') || '/');
+        }
+    };
+
+    btnMentionAll.onclick = () => {
+        if (!explorerFiles.length) return;
+        const names = explorerFiles.map(f => `"${f.name}"`).join(', ');
+        socket.emit('terminal.toTerm', { tabId: activeTabId, data: `Attached files: ${names}\r` });
+        generatedModal.classList.remove('active');
     };
 
     btnCloseGenerated.onclick = () => {
         generatedModal.classList.remove('active');
     };
 
-    socket.on('fs.listGenerated.response', (data) => {
-        if (data.error) {
-            generatedList.innerHTML = `<div class="help-text">Error: ${data.error}</div>`;
-            return;
-        }
-        
-        generatedList.innerHTML = '';
-        if (data.files.length === 0) {
-            generatedList.innerHTML = `<div class="help-text">No generated files found in ${data.path}</div>`;
+    socket.on('fs.list.response', (data) => {
+        // Shared response for both settings explorer and workspace explorer
+        if (data.error) return;
+
+        // If modal is active, populate the workspace explorer
+        if (generatedModal.classList.contains('active') && data.path === explorerCurrentPath) {
+            generatedList.innerHTML = '';
+            explorerFiles = data.files || [];
+
+            data.folders.forEach(folder => {
+                const div = document.createElement('div');
+                div.className = 'browser-item';
+                div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> <strong>${folder.name}/</strong>`;
+                div.onclick = () => openExplorer(folder.path);
+                generatedList.appendChild(div);
+            });
+
+            explorerFiles.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'browser-item';
+                div.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                        <span>${file.name}</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); generatedModal.classList.remove('active');">Mention</button>
+                            <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
+                        </div>
+                    </div>
+                `;
+                generatedList.appendChild(div);
+            });
             return;
         }
 
-        data.files.forEach(file => {
+        // Otherwise populate the settings explorer
+        currentBrowserPath = data.path;
+        inputBrowserPath.value = currentBrowserPath;
+        browserList.innerHTML = '';
+        data.folders.forEach(folder => {
             const div = document.createElement('div');
             div.className = 'browser-item';
-            div.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                    <span>${file.name}</span>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); generatedModal.classList.remove('active');">Mention</button>
-                        <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
-                    </div>
-                </div>
-            `;
-            generatedList.appendChild(div);
+            div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> ${folder.name}`;
+            div.onclick = () => loadDirectory(folder.path);
+            browserList.appendChild(div);
         });
     });
 

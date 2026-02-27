@@ -3,41 +3,49 @@
 This directory is the primary workspace for maintaining and extending the web-based terminal interface for AI CLIs.
 
 ## Memory & Context Workflow
-- **Commit to Memory:** When the "Commit to Memory" button is clicked, it sends an instruction to update the current workspace's `GEMINI.md` file. 
+- **Commit to Memory:** When the "Commit to Memory" button (Floppy Disk icon) is clicked, it sends an instruction to update the current workspace's `GEMINI.md` file. 
 - **AI Action:** The AI must respond by summarizing the progress made during the session, identifying any new project-specific mandates, and updating the file to ensure continuity across future sessions.
 - **Hierarchical Memory:** Always prioritize updating the most specific `GEMINI.md` file (the one in the active workspace directory) over more general parent or global context files.
 
 ## Key Files & Directories
-- `server.js`: The core Express/Node.js server handling PTY and static file serving.
-- `public/`: Frontend React/Vanilla JS assets for the terminal UI.
-- `scripts/`: (`install.sh`, `proxmox-create-lxc.sh`, `setup-lxc.sh`) Deployment and configuration scripts.
-- `package.json`: Dependency management for the Node.js environment.
+- `server.js`: Core Express server handling PTY, Multer uploads, and file downloads. Includes PATH injection for Ollama.
+- `public/`: Frontend assets (Xterm.js, Socket.io, mobile-responsive CSS).
+- `agents/`: Persistent JSON storage for custom AI personas.
+- `generated/`: Dynamic workspace-specific folder for AI-outputted files.
+- `proxmox-create-lxc.sh`: Interactive host-side script for customized LXC deployment.
 
 ## Workspace Mandates
-- **Stability:** Ensure all changes to `server.js` or deployment scripts are thoroughly tested for regressions, especially regarding terminal sizing and shell execution.
-- **Multi-Session Management:** When modifying PTY logic, ensure that tab IDs are correctly propagated through the socket layer to prevent cross-tab data leakage.
-- **Soft Update Integrity:** Maintain the version-checking logic in `install.sh`. Any new global dependencies must be added to the check list in `setup-lxc.sh` to prevent unnecessary re-installs.
-- **UX Consistency:** The terminal UI must remain minimal, high-performance, and focused on AI development workflows. New UI elements (like the tab bar and usage bars) must follow the established glassmorphism aesthetic.
-- **Authentication Resilience:** Always check for an active GitHub PAT in the root `GEMINI.md` before attempting a push. Never store credentials locally within this workspace; always reference the master mandate.
-- **Security:** Maintain strict isolation between the web terminal and the host system. Validate all file path operations from the UI.
+- **UI Architecture:** The sidebar must use a collapsible accordion-style layout (details/summary). Primary actions reside in a dedicated icon row in the header: **Upload**, **Folder (Explorer)**, **Floppy (Memory)**, and **Bin (Clear)**.
+- **Workspace Explorer:** The folder icon MUST launch a full-featured file explorer for the active workspace, allowing nested navigation and multi-file "Mentions."
+- **Asset Integrity:** Uploaded files MUST be stored in the "Asset Storage Path" defined in settings, defaulting to the active workspace.
+- **Auto-Mention:** Successfully uploaded or selected files MUST automatically send their filename to the terminal using the format: `Attached files: "filename.ext"\r` to trigger immediate AI processing.
+- **Infrastructure Scaling:** 
+    - Default deployments via `proxmox-create-lxc.sh` MUST use **6GB RAM**, **30GB Disk**, and **2 CPU Cores**.
+    - The installation script MUST remain interactive, offering a "Quick Default" mode and a "Custom" mode for granular hardware and credential control.
+- **PTY Isolation:** Every terminal tab MUST have `/usr/local/bin` explicitly injected into its environment PATH to ensure seamless access to Ollama.
+- **Terminal Utilities:** The "Clear Terminal" button MUST automatically execute `/clear` for AI CLIs and `clear` for standard shells using `\r\n`.
 
-## Development Workflow
-1. **Testing:** Run `npm install` and `node server.js` to test UI changes locally on `http://localhost:3000`.
-2. **Deployment:** Update shell scripts only after confirming manual installation steps on a clean Ubuntu 24.04 environment.
-3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
+## Recent Progress (Session: Feb 27, 2026 - Part 3)
+- **Advanced File Management:**
+    - Refactored "Generated Content" into a comprehensive **Workspace Explorer** with folder navigation.
+    - Implemented **"Mention All Files"** and individual file mentions within the explorer.
+    - Added **Workspace ZIP Import**: Users can now upload and automatically unpack project archives into the workspace.
+    - Added **Asset Storage Path** configuration in Settings to separate uploads from workspace roots.
+- **Infrastructure & Deployment:**
+    - Refactored `proxmox-create-lxc.sh` into an interactive installation wizard.
+    - Increased default LXC resource allocation to **6GB RAM** and **30GB Disk**.
+    - Implemented a "Custom" configuration mode allowing users to define Hostname, RAM, Disk, CPU, and Password during setup.
+- **Final UI Cleanup:**
+    - Relocated "Commit to Memory" and "Clear Terminal" to header icons, completing the 4-icon primary action row.
+    - Verified all sidebar sections are collapsible via accordion layout.
 
-## Recent Progress (Session: Feb 27, 2026)
-- **Mobile UX Optimization:**
-    - **Collapsible Sidebar:** Implemented a responsive sidebar that hides on mobile (screens < 768px).
-    - **Hamburger Menu:** Added a toggle button in the terminal header to easily access settings and launchers on small screens.
-    - **Focus Mode:** The sidebar automatically closes when the user interacts with the terminal on mobile, maximizing screen space.
-- **Local LLM Integration (Ollama):**
-    - **Launcher Section:** Added a dedicated "Local LLMs (Ollama)" section in the sidebar with model selection (DeepSeek R1, Llama 3, etc.).
-    - **One-Click Execution:** Implemented "Run" and "Pull" buttons that automatically open new terminal tabs and execute the corresponding Ollama commands.
-- **Asset Management System:**
-    - **Upload Integration:** Added a "Upload Asset" button in the sidebar that saves files directly to the currently active workspace directory.
-    - **Generated Content Hub:** Implemented a "Generated Content" explorer that lists and allows downloading of files from a `generated/` folder within the workspace.
-- **Model Selection Expansion:** Updated the Gemini model selection to include specific tiers (3.1 Pro, 3 Flash, 2.5 Pro/Flash/Lite).
+## Recent Progress (Session: Feb 27, 2026 - Part 2)
+- **Sidebar UI Refactor:** Reorganized the sidebar into collapsible accordion sections and header icons.
+- **Enhanced File Synergy:** Implemented Auto-Mention with Auto-Enter for uploaded assets.
+- **Ollama Reliability:** Fixed PATH and dependency issues (`zstd`) for local model execution.
 
-## Recent Progress (Session: Feb 26, 2026 - Part 2)
-- **Agents System Implementation:** Developed a persistent "Agents" system allowing users to create, store, and launch custom AI personas.
+## Recent Progress (Session: Feb 27, 2026 - Part 1)
+- **Model Selection & Assets:** Expanded Gemini model tiers and implemented the `multer`-based asset management system.
+- **Mobile-First UX:** Implemented the collapsible mobile sidebar and hamburger menu toggle.
+
+--- End of Recent Progress ---

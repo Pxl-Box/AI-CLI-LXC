@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const unzipper = require('unzipper');
 
 const app = express();
 const server = http.createServer(app);
@@ -34,6 +35,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Upload endpoint
 app.post('/upload', upload.array('files'), (req, res) => {
     res.json({ success: true, message: 'Files uploaded successfully' });
+});
+
+// Workspace Import endpoint (ZIP)
+app.post('/upload-workspace', upload.single('workspaceZip'), async (req, res) => {
+    try {
+        const targetDir = req.query.targetDir || process.env.HOME;
+        if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+
+        const zipPath = req.file.path;
+        await fs.createReadStream(zipPath)
+            .pipe(unzipper.Extract({ path: targetDir }))
+            .promise();
+
+        // Cleanup the zip file after extraction
+        fs.unlinkSync(zipPath);
+        res.json({ success: true, message: 'Workspace imported and extracted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // Download endpoint
@@ -148,15 +168,26 @@ io.on('connection', (socket) => {
                 .filter(item => item.isDirectory())
                 .map(item => ({
                     name: item.name,
-                    path: path.join(dirPath, item.name)
+                    path: path.join(dirPath, item.name),
+                    type: 'directory'
+                }));
+
+            const files = items
+                .filter(item => !item.isDirectory())
+                .map(item => ({
+                    name: item.name,
+                    path: path.join(dirPath, item.name),
+                    type: 'file',
+                    size: fs.statSync(path.join(dirPath, item.name)).size
                 }));
 
             // Sort alphabetically
             folders.sort((a, b) => a.name.localeCompare(b.name));
+            files.sort((a, b) => a.name.localeCompare(b.name));
 
-            socket.emit('fs.list.response', { path: dirPath, folders });
+            socket.emit('fs.list.response', { path: dirPath, folders, files });
         } catch (error) {
-            socket.emit('fs.list.response', { error: error.message, path: targetPath, folders: [] });
+            socket.emit('fs.list.response', { error: error.message, path: targetPath, folders: [], files: [] });
         }
     });
 
