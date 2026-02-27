@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Socket.io
+    const socket = io();
+
     // UI Elements
     const terminalContainer = document.getElementById('terminal-container');
     const tabsContainer = document.getElementById('terminal-tabs');
