@@ -523,24 +523,55 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Workspace Explorer Logic --- //
     const settingsModal = document.getElementById('settings-modal');
     const inputBrowserPath = document.getElementById('input-browser-path');
-    const browserList = document.getElementById('browser-list');
+    const browserList = document.getElementById('browser-list'); // now a <select>
     const inputNewFolder = document.getElementById('input-new-folder');
+    const newFolderRow = document.getElementById('new-folder-row');
     let currentBrowserPath = '';
 
     const loadDirectory = (dirPath) => { socket.emit('fs.list', dirPath); };
 
+    // Dropdown navigation: selecting a folder navigates into it
+    if (browserList) {
+        browserList.addEventListener('change', () => {
+            const selectedPath = browserList.value;
+            if (selectedPath) {
+                loadDirectory(selectedPath);
+                browserList.value = ''; // reset after navigating
+            }
+        });
+    }
+
+    // Toggle the new-folder input row
+    const btnNewFolderInline = document.getElementById('btn-new-folder-inline');
+    const btnCancelFolder = document.getElementById('btn-cancel-folder');
+    if (btnNewFolderInline && newFolderRow) {
+        btnNewFolderInline.addEventListener('click', () => {
+            newFolderRow.style.display = newFolderRow.style.display === 'none' ? 'flex' : 'none';
+            if (newFolderRow.style.display === 'flex') inputNewFolder.focus();
+        });
+    }
+    if (btnCancelFolder && newFolderRow) {
+        btnCancelFolder.addEventListener('click', () => {
+            newFolderRow.style.display = 'none';
+            inputNewFolder.value = '';
+        });
+    }
+
     socket.on('fs.list.response', (data) => {
         if (data.error) return;
         currentBrowserPath = data.path;
-        inputBrowserPath.value = currentBrowserPath;
-        browserList.innerHTML = '';
-        data.folders.forEach(folder => {
-            const div = document.createElement('div');
-            div.className = 'browser-item';
-            div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> ${folder.name}`;
-            div.onclick = () => loadDirectory(folder.path);
-            browserList.appendChild(div);
-        });
+        // inputBrowserPath is now a <span>
+        if (inputBrowserPath) inputBrowserPath.textContent = currentBrowserPath;
+        // Populate the dropdown
+        if (browserList) {
+            browserList.innerHTML = '<option value="">-- select folder --</option>';
+            data.folders.forEach(folder => {
+                const opt = document.createElement('option');
+                opt.value = folder.path;
+                opt.textContent = folder.name;
+                browserList.appendChild(opt);
+            });
+        }
     });
 
     // --- Settings UI Tab Logic --- //
