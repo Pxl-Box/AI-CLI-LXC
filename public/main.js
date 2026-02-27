@@ -6,8 +6,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDot = document.querySelector('.dot');
     const statusText = document.querySelector('.status-text');
 
-    // Initialize Socket.io
-    const socket = io();
+    // --- UI Interactions ---
+    const workspaceContainer = document.querySelector('.workspace-container');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+
+    btnToggleSidebar.onclick = () => {
+        workspaceContainer.classList.toggle('sidebar-active');
+        // Trigger resize after transition
+        setTimeout(() => {
+            const active = terminals.get(activeTabId);
+            if (active) {
+                active.fitAddon.fit();
+                socket.emit('terminal.resize', { tabId: activeTabId, size: { cols: active.term.cols, rows: active.term.rows } });
+            }
+        }, 350);
+    };
+
+    // Close sidebar on mobile when clicking terminal
+    terminalContainer.onclick = () => {
+        if (window.innerWidth <= 768 && workspaceContainer.classList.contains('sidebar-active')) {
+            workspaceContainer.classList.remove('sidebar-active');
+        }
+    };
 
     // --- Tab Management State ---
     const terminals = new Map(); // tabId -> { term, fitAddon, element }

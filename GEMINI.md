@@ -27,17 +27,17 @@ This directory is the primary workspace for maintaining and extending the web-ba
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
 ## Recent Progress (Session: Feb 27, 2026)
+- **Mobile UX Optimization:**
+    - **Collapsible Sidebar:** Implemented a responsive sidebar that hides on mobile (screens < 768px).
+    - **Hamburger Menu:** Added a toggle button in the terminal header to easily access settings and launchers on small screens.
+    - **Focus Mode:** The sidebar automatically closes when the user interacts with the terminal on mobile, maximizing screen space.
 - **Local LLM Integration (Ollama):**
     - **Launcher Section:** Added a dedicated "Local LLMs (Ollama)" section in the sidebar with model selection (DeepSeek R1, Llama 3, etc.).
     - **One-Click Execution:** Implemented "Run" and "Pull" buttons that automatically open new terminal tabs and execute the corresponding Ollama commands.
-    - **Resource Feedback:** Integrated local LLM activity into the usage tracking bars.
 - **Asset Management System:**
     - **Upload Integration:** Added a "Upload Asset" button in the sidebar that saves files directly to the currently active workspace directory.
     - **Generated Content Hub:** Implemented a "Generated Content" explorer that lists and allows downloading of files from a `generated/` folder within the workspace.
-    - **Backend Uploads:** Integrated `multer` in `server.js` to handle multi-file uploads with dynamic destination paths.
 - **Model Selection Expansion:** Updated the Gemini model selection to include specific tiers (3.1 Pro, 3 Flash, 2.5 Pro/Flash/Lite).
-- **Usage Tracking Alignment:** Adjusted the real-time usage dashboard and logic to track activity across these specific Gemini 3.x and 2.5 series models.
-- **Frontend Refinement:** Updated the "Start Gemini CLI" launcher and "Agents" creation modal to support these specific model names via the `-m` flag.
 
 ## Recent Progress (Session: Feb 26, 2026 - Part 2)
 - **Agents System Implementation:** Developed a persistent "Agents" system allowing users to create, store, and launch custom AI personas.
