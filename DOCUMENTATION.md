@@ -39,11 +39,11 @@ The AI Terminal Workspace is a modern, web-based wrapper for local AI CLIs (like
 ```
 
 ### Data Handling
-- **File Uploads:** Files are uploaded to the path defined in "Asset Storage Path" (defaults to the active workspace).
+- **File Uploads:** Files are stored in a `workspace-uploads/` subfolder within the currently selected workspace.
 - **AI Agents:** Custom personas are stored as standalone `.json` files in the `agents/` directory. Each file contains the name, model, and system prompt.
 - **Browser Storage:** `localStorage` is used to persist:
     - Assigned paths for Gemini/Claude workspaces.
-    - Asset storage paths.
+    - Saved project bookmarks.
     - Terminal tab state (IDs and titles) for session restoration.
 
 ---

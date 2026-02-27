@@ -45,13 +45,20 @@ if [ "$INSTALL_CHOICE" == "2" ]; then
     read -p "Enter CPU Cores [$CORES]: " input_cores
     CORES=${input_cores:-$CORES}
 
+    read -p "Enter Container ID [Next Available]: " input_ctid
+    CTID=${input_ctid}
+    
     read -p "Enter LXC Password [$LXC_PASS]: " input_pass
     LXC_PASS=${input_pass:-$LXC_PASS}
     echo "----------------------------"
 fi
 
-CTID=$(pvesh get /cluster/nextid)
-echo "[+] Using next available Container ID: $CTID"
+if [ -z "$CTID" ]; then
+    CTID=$(pvesh get /cluster/nextid)
+    echo "[+] Using next available Container ID: $CTID"
+else
+    echo "[+] Using custom Container ID: $CTID"
+fi
 
 echo "[+] Updating Proxmox template list..."
 pveam update >/dev/null

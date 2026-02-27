@@ -105,4 +105,15 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **Model Selection & Assets:** Expanded Gemini model tiers and implemented the `multer`-based asset management system.
 - **Mobile-First UX:** Implemented the collapsible mobile sidebar and hamburger menu toggle.
 
+## Recent Progress (Session: Feb 27, 2026 - Part 8)
+- **Bug Fixes & UX Polish:**
+    - Resolved `ReferenceError: updateUsageBar` by ensuring proper initialization order in `main.js`.
+    - Hardened `main.js` with null checks on workspace assignment inputs to prevent `TypeError`.
+    - Added a custom data URI favicon to `index.html` to suppress 404 console errors.
+- **Install Script Enhancement:**
+    - Updated `proxmox-create-lxc.sh` to allow custom **Container ID** selection during the "Custom" installation flow.
+    - Improved interactivity of the install script with clear prompts for hardware and ID.
+- **Documentation Overhaul:**
+    - Updated `README.md` and `DOCUMENTATION.md` to reflect the new 4-icon header, Agent management, and per-workspace asset handling.
+
 --- End of Recent Progress ---

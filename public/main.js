@@ -86,10 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
         allSelects.forEach(selectEl => {
             if (!selectEl) return;
             const currentSelection = selectEl.value || localStorage.getItem('ai-active-workspace') || '';
-            
+
             selectEl.innerHTML = (selectEl.id === 'saved-projects-list' ? '' : '<option value="">Default (~)</option>') +
                 savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
-            
+
             if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
                 selectEl.value = currentSelection;
             } else if (selectEl.id === 'saved-projects-list' && savedProjects.length === 0) {
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     div.style.padding = '0.75rem';
                     div.style.borderRadius = '8px';
                     div.style.border = '1px solid var(--border-color)';
-                    
+
                     div.innerHTML = `
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.name}</div>
@@ -142,6 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
+    const usageState = {
+        'gemini-3': 0,
+        'gemini-2.5': 0,
+        'claude': 0
+    };
+
+    function updateUsageBar(type, increment) {
+        if (usageState.hasOwnProperty(type)) {
+            usageState[type] = Math.min(100, usageState[type] + increment);
+            const fill = document.getElementById(`usage-${type}`);
+            if (fill) fill.style.width = usageState[type] + '%';
+        }
+    }
 
     // Global listener for workspace changes
     const handleWorkspaceChange = (e) => {
@@ -174,12 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeWsSelect = document.getElementById('active-workspace-select');
         const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
         const savedProjectsListEl = document.getElementById('saved-projects-list');
-        
+
         if (activeWsSelect) activeWsSelect.addEventListener('change', handleWorkspaceChange);
         if (settingsActiveWsSelect) settingsActiveWsSelect.addEventListener('change', handleWorkspaceChange);
         if (savedProjectsListEl) savedProjectsListEl.addEventListener('change', handleWorkspaceChange);
     };
-    
+
     // Call init after DOM is fully ready or just here if we know elements are present
     setTimeout(initWorkspaceListeners, 100);
 
@@ -488,19 +502,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (active) active.term.focus();
     };
 
-    const usageState = {
-        'gemini-3': 0,
-        'gemini-2.5': 0,
-        'claude': 0
-    };
-
-    const updateUsageBar = (type, increment) => {
-        if (usageState.hasOwnProperty(type)) {
-            usageState[type] = Math.min(100, usageState[type] + increment);
-            const fill = document.getElementById(`usage-${type}`);
-            if (fill) fill.style.width = usageState[type] + '%';
-        }
-    };
 
     // Global drain interval (every 2 seconds)
     setInterval(() => {
@@ -889,13 +890,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-assign-gemini').addEventListener('click', () => {
         assignedPaths.gemini = currentBrowserPath;
         localStorage.setItem('ai-workspace-gemini', currentBrowserPath);
-        document.getElementById('input-gemini-path').value = currentBrowserPath;
+        const inputGemini = document.getElementById('input-gemini-path');
+        if (inputGemini) inputGemini.value = currentBrowserPath;
     });
 
     document.getElementById('btn-assign-claude').addEventListener('click', () => {
         assignedPaths.claude = currentBrowserPath;
         localStorage.setItem('ai-workspace-claude', currentBrowserPath);
-        document.getElementById('input-claude-path').value = currentBrowserPath;
+        const inputClaude = document.getElementById('input-claude-path');
+        if (inputClaude) inputClaude.value = currentBrowserPath;
     });
 
     const btnSaveProject = document.getElementById('btn-save-project');

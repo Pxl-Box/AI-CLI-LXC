@@ -7,8 +7,10 @@ This project provides a fully localized, web-accessible interface for your headl
 ## ✨ Features
 
 - **Full Terminal Emulator:** Native interaction using `xterm.js` and `node-pty`.
-- **Workspace Manager:** Interactively browse files, create folders, and preview code with syntax highlighting.
-- **Smart Model Isolation:** Assign default working directories for Claude and Gemini for automatic context isolation.
+- **4-Icon Primary Actions:** Fast access to **Upload**, **Workspace Explorer**, **Commit To Memory**, and **Clear Terminal** from the header.
+- **Workspace Manager:** Interactively browse files, create folders, and preview code with syntax highlighting (Prism.js).
+- **Smart Model isolation:** Per-workspace asset management and custom folder assignments for AI personas.
+- **Agent Hub:** Create, edit, and launch custom AI personas with specialized system prompts.
 - **Advanced Persistence:** Sessions survive browser refreshes; Black Box recovery handles AI crashes.
 - **Dual-Terminal Split View:** Collaborative multi-AI workflow with side-by-side terminal windows.
 - **Live Ollama Sync:** Direct integration with your local LLM library.
@@ -35,8 +37,8 @@ bash <(curl -s https://raw.githubusercontent.com/Pxl-Box/AI-CLI-LXC/main/proxmox
 
 **What this script does:**
 - Downloads the latest Ubuntu 24.04 template.
-- Dynamically creates a new unprivileged LXC with the correct specs (2 Cores, 2GB RAM, Nesting Enabled).
-- **Sets the default root password to `password`**.
+- Dynamically creates a new unprivileged LXC with customizable Container ID and hardware specs (Default: 2 Cores, 6GB RAM, 30GB Disk).
+- **Interactive setup** with Quick Default and Custom configuration modes.
 - Injects the Node.js installation, the AI CLIs, and the frontend web app.
 - Configures `pm2` to automatically start and persist the web server as a background service.
 
