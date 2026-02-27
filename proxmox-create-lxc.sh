@@ -47,7 +47,7 @@ pct create $CTID local:vztmpl/$TEMPLATE_FILE \
     --cores 2 \
     --memory 2048 \
     --swap 512 \
-    --rootfs local-lvm:8 \
+    --rootfs local-lvm:30 \
     --net0 name=eth0,bridge=vmbr0,ip=dhcp \
     --unprivileged 1 \
     --features nesting=1
