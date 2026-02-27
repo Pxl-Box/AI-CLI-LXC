@@ -191,9 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : "";
         
         if (title.includes("gemini")) {
-            if (title.includes("3")) {
+            if (title.includes("gemini-3") || title.includes("(3")) {
                 updateUsageBar("gemini-3", 20);
-            } else if (title.includes("2.5")) {
+            } else if (title.includes("gemini-2.5") || title.includes("(2.5")) {
                 updateUsageBar("gemini-2.5", 15);
             }
         } else if (title.includes("claude")) {

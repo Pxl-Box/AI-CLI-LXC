@@ -26,11 +26,15 @@ This directory is the primary workspace for maintaining and extending the web-ba
 2. **Deployment:** Update shell scripts only after confirming manual installation steps on a clean Ubuntu 24.04 environment.
 3. **PTE Management:** When modifying `node-pty` logic, ensure correct handling of window resizing events to prevent visual artifacts.
 
-## Recent Progress (Session: Feb 26, 2026)
-- **Gemini Tier Integration (3.1 & 2.5):** Refactored the Gemini launcher to support the latest model tiers, including Gemini 3.1 Pro (Auto), Gemini 3 Flash (Auto), Gemini 2.5 Pro, and Gemini 2.5 Flash.
-- **Dynamic Model Selection:** Implemented a new dropdown selection system in the sidebar, allowing users to choose specific models before launching the Gemini CLI.
-- **Tiered Usage Dashboard:** Updated the visual usage bars to provide real-time (estimated) tracking for Gemini 3.1 and 2.5 tiers independently.
-- **Intelligent Tab Labeling:** Enhanced terminal tab management to dynamically include the active model name (e.g., "Gemini (3.1-pro)") in the title.
-- **Asset Optimization:** Purged redundant screenshots and standardized on `Screenshot 2026-02-26 222353.png` as the current UI reference.
-- **Global Sync:** Committed and pushed all UI and backend changes to the `Pxl-Box/AI-CLI-LXC` repository.
---- End of Recent Progress ---
+## Recent Progress (Session: Feb 27, 2026)
+- **Model Selection Expansion:** Updated the Gemini model selection to include specific tiers:
+    - Gemini 3.1 Pro (Preview)
+    - Gemini 3 Flash (Preview)
+    - Gemini 2.5 Pro
+    - Gemini 2.5 Flash
+    - Gemini 2.5 Flash Lite
+- **Usage Tracking Alignment:** Adjusted the real-time usage dashboard and logic to track activity across these specific Gemini 3.x and 2.5 series models.
+- **Frontend Refinement:** Updated the "Start Gemini CLI" launcher and "Agents" creation modal to support these specific model names via the `-m` flag.
+
+## Recent Progress (Session: Feb 26, 2026 - Part 2)
+- **Agents System Implementation:** Developed a persistent "Agents" system allowing users to create, store, and launch custom AI personas.
