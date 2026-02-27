@@ -83,6 +83,22 @@ setInterval(async () => {
     }
 }, 3000);
 
+// Store PTY processes globally to survive socket disconnects
+// Key: tabId, Value: { pty, lastSeen }
+const globalPtyProcesses = new Map();
+
+// Cleanup orphaned processes every minute
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, proc] of globalPtyProcesses) {
+        if (now - proc.lastSeen > 300000) { // 5 minutes timeout
+            console.log(`[!] Killing orphaned PTY: ${id}`);
+            proc.pty.kill();
+            globalPtyProcesses.delete(id);
+        }
+    }
+}, 60000);
+
 io.on('connection', (socket) => {
     console.log(`[+] Client connected: ${socket.id}`);
 
@@ -90,13 +106,11 @@ io.on('connection', (socket) => {
     const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
     let currentCwd = process.env.HOME || process.env.USERPROFILE;
-    // Store multiple PTY processes keyed by a tab ID
-    const ptyProcesses = new Map();
 
     // Helper to spawn/respawn the terminal
     const spawnTerminal = (tabId = 'default') => {
-        if (ptyProcesses.has(tabId)) {
-            ptyProcesses.get(tabId).kill();
+        if (globalPtyProcesses.has(tabId)) {
+            globalPtyProcesses.get(tabId).pty.kill();
         }
         
         // Ensure /usr/local/bin is in the PATH for spawned processes (critical for Ollama)
@@ -113,31 +127,32 @@ io.on('connection', (socket) => {
             env: env
         });
 
+        const procData = { pty: ptyProcess, lastSeen: Date.now() };
+        globalPtyProcesses.set(tabId, procData);
+
         ptyProcess.onData((data) => {
+            procData.lastSeen = Date.now();
             socket.emit('terminal.incData', { tabId, data });
         });
 
-        ptyProcesses.set(tabId, ptyProcess);
         return ptyProcess;
     };
 
-    // Initial spawn
-    spawnTerminal('default');
-
     // Handle data coming from the client and send it to the terminal
     socket.on('terminal.toTerm', ({ tabId, data }) => {
-        const ptyProcess = ptyProcesses.get(tabId || 'default');
-        if (ptyProcess) {
-            ptyProcess.write(data);
+        const proc = globalPtyProcesses.get(tabId || 'default');
+        if (proc) {
+            proc.lastSeen = Date.now();
+            proc.pty.write(data);
         }
     });
 
     // Handle terminal resize events
     socket.on('terminal.resize', ({ tabId, size }) => {
         try {
-            const ptyProcess = ptyProcesses.get(tabId || 'default');
-            if (ptyProcess) {
-                ptyProcess.resize(size.cols, size.rows);
+            const proc = globalPtyProcesses.get(tabId || 'default');
+            if (proc) {
+                proc.pty.resize(size.cols, size.rows);
             }
         } catch (error) {
             console.error('Error resizing terminal:', error);
@@ -150,10 +165,28 @@ io.on('connection', (socket) => {
     });
 
     socket.on('terminal.closeTab', (tabId) => {
-        if (ptyProcesses.has(tabId)) {
-            ptyProcesses.get(tabId).kill();
-            ptyProcesses.delete(tabId);
+        if (globalPtyProcesses.has(tabId)) {
+            globalPtyProcesses.get(tabId).pty.kill();
+            globalPtyProcesses.delete(tabId);
         }
+    });
+
+    socket.on('terminal.reattach', (tabIds) => {
+        tabIds.forEach(tabId => {
+            if (globalPtyProcesses.has(tabId)) {
+                const proc = globalPtyProcesses.get(tabId);
+                proc.lastSeen = Date.now();
+                // Re-bind the onData listener to the NEW socket
+                proc.pty.removeAllListeners('data');
+                proc.pty.onData((data) => {
+                    proc.lastSeen = Date.now();
+                    socket.emit('terminal.incData', { tabId, data });
+                });
+                socket.emit('terminal.incData', { tabId, data: '\r\n\x1b[33m[System] Re-attached to session\x1b[0m\r\n' });
+            } else {
+                spawnTerminal(tabId);
+            }
+        });
     });
 
     // --- Workspace Settings Hooks ---
@@ -285,12 +318,44 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- Ollama Model Management ---
+    socket.on('ollama.listModels', () => {
+        const { exec } = require('child_process');
+        // Inject /usr/local/bin specifically for this exec call
+        const execOptions = {
+            env: { ...process.env, PATH: `${process.env.PATH}:/usr/local/bin` }
+        };
+        
+        exec('ollama list', execOptions, (error, stdout, stderr) => {
+            if (error) {
+                return socket.emit('ollama.listModels.response', { success: false, models: [] });
+            }
+            
+            const lines = stdout.trim().split('\n').slice(1); // Skip header
+            const models = lines.map(line => {
+                const parts = line.split(/\s+/);
+                return parts[0]; // The NAME column
+            }).filter(name => name);
+            
+            socket.emit('ollama.listModels.response', { success: true, models });
+        });
+    });
+
+    socket.on('fs.readFile', (filePath) => {
+        try {
+            if (!fs.existsSync(filePath)) {
+                return socket.emit('fs.readFile.response', { error: 'File does not exist' });
+            }
+            const content = fs.readFileSync(filePath, 'utf-8');
+            socket.emit('fs.readFile.response', { path: filePath, content });
+        } catch (error) {
+            socket.emit('fs.readFile.response', { error: error.message });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log(`[-] Client disconnected: ${socket.id}`);
-        for (const [id, ptyProcess] of ptyProcesses) {
-            ptyProcess.kill();
-        }
-        ptyProcesses.clear();
+        // Session survives for 5 minutes (via global cleanup interval)
     });
 });
 

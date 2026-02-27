@@ -24,6 +24,27 @@ This directory is the primary workspace for maintaining and extending the web-ba
     - The installation script MUST remain interactive, offering a "Quick Default" mode and a "Custom" mode for granular hardware and credential control.
 - **PTY Isolation:** Every terminal tab MUST have `/usr/local/bin` explicitly injected into its environment PATH to ensure seamless access to Ollama.
 - **Terminal Utilities:** The "Clear Terminal" button MUST automatically execute `/clear` for AI CLIs and `clear` for standard shells using `\r\n`.
+- **System Monitoring:** The header MUST display a real-time "System Pulse" showing CPU and RAM utilization for the host container.
+
+## Recent Progress (Session: Feb 27, 2026 - Part 4)
+- **Real-time Monitoring & UI:**
+    - Integrated `systeminformation` into the backend to track host resources (CPU/RAM).
+    - Implemented a "System Pulse" display in the sidebar header.
+    - Refactored "Usage Bars" to be reactive, reflecting real-time data throughput for active AI personas.
+- **Agent Management:**
+    - Implemented "Edit Agent" functionality, allowing users to update existing persona prompts and models.
+- **Advanced Terminal Features:**
+    - **Dual-Terminal Split View:** Added side-by-side terminal support with pinned tabs.
+    - **Terminal Session Persistence:** Implemented global PTY management and re-attachment logic (sessions survive page refreshes).
+- **Workspace Explorer & Power Tools:**
+    - **Rich File Preview (Peek):** Added an "Eye/Peek" modal with Prism.js syntax highlighting for instant code verification.
+    - **Smart Context Gatherer:** Added "Gather Context" to automatically identify and mention architectural files.
+    - **Multi-select Mentions:** Implemented checkboxes for granular, batch file processing.
+    - **In-modal Folder Creation:** Streamlined directory management within the explorer.
+- **Local LLM Integration:**
+    - **Live Ollama Sync:** Dynamically populates the model selection dropdown from the host container's installed models.
+- **Dependency Management:**
+    - Added `unzipper`, `systeminformation`, and Prism.js integration.
 
 ## Recent Progress (Session: Feb 27, 2026 - Part 3)
 - **Advanced File Management:**

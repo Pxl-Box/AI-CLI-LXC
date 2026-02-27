@@ -475,6 +475,17 @@ body {
     min-height: 0;
     position: relative;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    display: flex; /* Support split view */
+}
+
+.terminal-wrapper.split {
+    flex: 1;
+    display: block !important;
+    border-right: 1px solid var(--border-color);
+}
+
+.terminal-wrapper.split:last-child {
+    border-right: none;
 }
 
 .terminal-instance {

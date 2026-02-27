@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDot = document.querySelector('.dot');
     const statusText = document.querySelector('.status-text');
 
+    const saveTabState = () => {
+        const state = Array.from(terminals.entries()).map(([id, data]) => ({
+            id,
+            title: data.tabEl.querySelector('.tab-title').textContent
+        }));
+        localStorage.setItem('terminal-tabs-state', JSON.stringify(state));
+    };
+
     // --- UI Interactions ---
     const workspaceContainer = document.querySelector('.workspace-container');
     const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
@@ -31,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
             workspaceContainer.classList.remove('sidebar-active');
         }
     };
+
+    const btnSplitView = document.getElementById('btn-split-view');
+    let isSplitView = false;
+    let secondaryTabId = null;
 
     // --- Tab Management State ---
     const terminals = new Map(); // tabId -> { term, fitAddon, element }
@@ -103,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Store instance
         terminals.set(tabId, { term, fitAddon, element: termWrapper, tabEl });
+        if (typeof saveTabState === 'function') saveTabState();
 
         // Handle events
         term.onData((data) => {
@@ -118,24 +131,51 @@ document.addEventListener('DOMContentLoaded', () => {
         return term;
     };
 
+    const refreshTerminalLayout = () => {
+        terminals.forEach((data, id) => {
+            const isPrimary = (id === activeTabId);
+            const isSecondary = (isSplitView && id === secondaryTabId);
+            
+            data.element.classList.toggle('active', isPrimary || isSecondary);
+            data.element.classList.toggle('split', isSplitView && (isPrimary || isSecondary));
+            data.tabEl.classList.toggle('active', isPrimary);
+            data.tabEl.classList.toggle('secondary', isSecondary);
+
+            if (isPrimary || isSecondary) {
+                setTimeout(() => {
+                    data.fitAddon.fit();
+                    socket.emit('terminal.resize', { tabId: id, size: { cols: data.term.cols, rows: data.term.rows } });
+                }, 50);
+            }
+        });
+    };
+
     const switchTab = (tabId) => {
         if (!terminals.has(tabId)) return;
 
-        // Update UI
-        terminals.forEach((data, id) => {
-            data.element.classList.toggle('active', id === tabId);
-            data.tabEl.classList.toggle('active', id === tabId);
-        });
+        if (isSplitView) {
+            if (tabId !== activeTabId) {
+                secondaryTabId = activeTabId;
+                activeTabId = tabId;
+            }
+        } else {
+            activeTabId = tabId;
+        }
 
-        activeTabId = tabId;
-        const { term, fitAddon } = terminals.get(tabId);
-        
-        // Refocus and refit
-        setTimeout(() => {
-            fitAddon.fit();
-            term.focus();
-            socket.emit('terminal.resize', { tabId, size: { cols: term.cols, rows: term.rows } });
-        }, 50);
+        refreshTerminalLayout();
+        const active = terminals.get(activeTabId);
+        if (active) active.term.focus();
+    };
+
+    btnSplitView.onclick = () => {
+        isSplitView = !isSplitView;
+        btnSplitView.classList.toggle('active', isSplitView);
+        if (isSplitView) {
+            if (!secondaryTabId || secondaryTabId === activeTabId) {
+                secondaryTabId = Array.from(terminals.keys()).find(id => id !== activeTabId) || null;
+            }
+        }
+        refreshTerminalLayout();
     };
 
     const closeTab = (tabId) => {
@@ -148,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             data.tabEl.remove();
             terminals.delete(tabId);
             socket.emit('terminal.closeTab', tabId);
+            saveTabState();
 
             if (activeTabId === tabId) {
                 const nextTabId = terminals.keys().next().value;
@@ -163,16 +204,37 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab(id);
     };
 
-    // Initial setup: Clear existing and create default
+    // Initial setup: Restore or create default
+    const savedState = localStorage.getItem('terminal-tabs-state');
     tabsContainer.innerHTML = '';
-    createTerminalInstance('default', 'Main Terminal');
+    
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            if (state.length > 0) {
+                state.forEach(t => createTerminalInstance(t.id, t.title));
+                socket.emit('terminal.reattach', state.map(t => t.id));
+            } else {
+                createTerminalInstance('default', 'Main Terminal');
+            }
+        } catch (e) {
+            console.error("Error restoring state:", e);
+            createTerminalInstance('default', 'Main Terminal');
+        }
+    } else {
+        createTerminalInstance('default', 'Main Terminal');
+    }
 
     // Handle Resize
     window.addEventListener('resize', () => {
-        const active = terminals.get(activeTabId);
-        if (active) {
-            active.fitAddon.fit();
-            socket.emit('terminal.resize', { tabId: activeTabId, size: { cols: active.term.cols, rows: active.term.rows } });
+        if (isSplitView) {
+            refreshTerminalLayout();
+        } else {
+            const active = terminals.get(activeTabId);
+            if (active) {
+                active.fitAddon.fit();
+                socket.emit('terminal.resize', { tabId: activeTabId, size: { cols: active.term.cols, rows: active.term.rows } });
+            }
         }
     });
 
@@ -289,6 +351,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Local LLM (Ollama) Logic ---
+    const localModelSelect = document.getElementById('local-model-select');
+
+    const syncLocalModels = () => {
+        socket.emit('ollama.listModels');
+    };
+
+    socket.on('ollama.listModels.response', (data) => {
+        if (data.success && data.models.length > 0) {
+            // Keep "Custom" at the end
+            const customOption = localModelSelect.querySelector('option[value="custom"]');
+            
+            // Clear existing options except maybe a "Pull new..." placeholder if we want
+            localModelSelect.innerHTML = '';
+            
+            data.models.forEach(model => {
+                const opt = document.createElement('option');
+                opt.value = model;
+                opt.textContent = model;
+                localModelSelect.appendChild(opt);
+            });
+            
+            if (customOption) localModelSelect.appendChild(customOption);
+        }
+    });
+
     document.getElementById('btn-run-local').addEventListener('click', () => {
         let model = document.getElementById('local-model-select').value;
         if (model === 'custom') {
@@ -430,13 +517,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const generatedModal = document.getElementById('generated-modal');
     const generatedList = document.getElementById('generated-list');
     const btnCloseGenerated = document.getElementById('btn-close-generated');
+    const previewModal = document.getElementById('preview-modal');
+    const btnClosePreview = document.getElementById('btn-close-preview');
+    const previewTitle = document.getElementById('preview-title');
+    const previewCode = document.getElementById('preview-code');
+
     const explorerPathEl = document.getElementById('explorer-current-path');
     const btnExplorerUp = document.getElementById('btn-explorer-up');
     const btnExplorerMkdir = document.getElementById('btn-explorer-mkdir');
     const btnMentionAll = document.getElementById('btn-mention-all');
     const btnMentionSelected = document.getElementById('btn-mention-selected');
+    const btnGatherContext = document.getElementById('btn-gather-context');
     const selectionCountEl = document.getElementById('explorer-selection-count');
     const inputExplorerSearch = document.getElementById('input-explorer-search');
+
+    const openPreview = (filePath) => {
+        previewTitle.textContent = filePath.split('/').pop();
+        previewCode.textContent = 'Loading...';
+        previewModal.classList.add('active');
+        socket.emit('fs.readFile', filePath);
+    };
+
+    socket.on('fs.readFile.response', (data) => {
+        if (data.error) {
+            previewCode.textContent = `Error: ${data.error}`;
+            return;
+        }
+        
+        // Detect language based on extension
+        const ext = data.path.split('.').pop().toLowerCase();
+        let lang = 'javascript';
+        if (ext === 'css') lang = 'css';
+        else if (ext === 'json') lang = 'json';
+        else if (ext === 'sh' || ext === 'bash') lang = 'bash';
+        else if (ext === 'md') lang = 'markdown';
+        else if (ext === 'html') lang = 'markup';
+        
+        previewCode.className = `language-${lang}`;
+        previewCode.textContent = data.content;
+        
+        // Trigger Prism highlighting
+        if (window.Prism) {
+            window.Prism.highlightElement(previewCode);
+        }
+    });
+
+    btnClosePreview.onclick = () => {
+        previewModal.classList.remove('active');
+    };
 
     let explorerCurrentPath = '';
     let explorerFiles = [];
@@ -474,6 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; min-width: 0;">
                     <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 0.5rem;">${file.name}</span>
                     <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                        <button class="action-btn small secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Peek Content" onclick="event.stopPropagation(); openPreview('${file.path.replace(/\\/g, '/')}');">Peek</button>
                         <button class="action-btn small secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\\r' }); document.getElementById('generated-modal').classList.remove('active');">Mention</button>
                         <button class="action-btn small primary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); window.location.href='/download?path=${encodeURIComponent(file.path)}'">Down</button>
                     </div>
@@ -604,6 +733,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = prompt("Enter new folder name:");
         if (name && explorerCurrentPath) {
             socket.emit('fs.createDir', { parentPath: explorerCurrentPath, folderName: name });
+        }
+    };
+
+    btnGatherContext.onclick = () => {
+        const smartFiles = ['gemini.md', 'server.js', 'package.json', '.env.example', 'readme.md', 'install.sh', 'setup-lxc.sh'];
+        let gatheredCount = 0;
+        
+        explorerFiles.forEach(file => {
+            if (smartFiles.includes(file.name.toLowerCase())) {
+                selectedFiles.add(file.name);
+                gatheredCount++;
+            }
+        });
+        
+        if (gatheredCount > 0) {
+            renderExplorer(inputExplorerSearch.value);
+            updateSelectionUI();
+        } else {
+            alert("No standard architectural files found in this folder.");
         }
     };
 
@@ -805,4 +953,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     loadAgents();
+    syncLocalModels();
 });
