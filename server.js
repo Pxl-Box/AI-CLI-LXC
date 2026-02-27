@@ -268,28 +268,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('fs.listGenerated', (workspacePath) => {
-        try {
-            const genPath = path.join(workspacePath, 'generated');
-            if (!fs.existsSync(genPath)) {
-                return socket.emit('fs.listGenerated.response', { path: genPath, files: [] });
-            }
-
-            const items = fs.readdirSync(genPath, { withFileTypes: true });
-            const files = items
-                .filter(item => item.isFile())
-                .map(item => ({
-                    name: item.name,
-                    path: path.join(genPath, item.name),
-                    size: fs.statSync(path.join(genPath, item.name)).size
-                }));
-
-            socket.emit('fs.listGenerated.response', { path: genPath, files });
-        } catch (error) {
-            socket.emit('fs.listGenerated.response', { error: error.message, files: [] });
-        }
-    });
-
     // --- Agent Management ---
     const AGENTS_DIR = path.join(__dirname, 'agents');
     if (!fs.existsSync(AGENTS_DIR)) fs.mkdirSync(AGENTS_DIR);

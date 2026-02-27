@@ -335,16 +335,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Quick Action Buttons --- //
     const assignedPaths = {
         gemini: localStorage.getItem('ai-workspace-gemini') || '',
-        claude: localStorage.getItem('ai-workspace-claude') || '',
-        assets: localStorage.getItem('ai-workspace-assets') || '',
-        generated: localStorage.getItem('ai-workspace-generated') || ''
+        claude: localStorage.getItem('ai-workspace-claude') || ''
     };
 
     if (assignedPaths.gemini) document.getElementById('input-gemini-path').value = assignedPaths.gemini;
     if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
-    if (assignedPaths.assets) document.getElementById('input-asset-path').value = assignedPaths.assets;
-    const inputGeneratedPath = document.getElementById('input-generated-path');
-    if (assignedPaths.generated && inputGeneratedPath) inputGeneratedPath.value = assignedPaths.generated;
 
     const sendCommand = (cmd) => {
         socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
@@ -769,18 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-claude-path').value = currentBrowserPath;
     });
 
-    document.getElementById('btn-assign-asset').addEventListener('click', () => {
-        assignedPaths.assets = currentBrowserPath;
-        localStorage.setItem('ai-workspace-assets', currentBrowserPath);
-        document.getElementById('input-asset-path').value = currentBrowserPath;
-    });
-
-    document.getElementById('btn-assign-generated').addEventListener('click', () => {
-        assignedPaths.generated = currentBrowserPath;
-        localStorage.setItem('ai-workspace-generated', currentBrowserPath);
-        document.getElementById('input-generated-path').value = currentBrowserPath;
-    });
-
     // --- Saved Projects Logic --- //
     const savedProjectsListEl = document.getElementById('saved-projects-list');
     let savedProjects = [];
@@ -823,8 +806,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectEl.value = currentSelection;
             }
             selectEl.addEventListener('change', (e) => {
-                if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = e.target.value;
-                if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = e.target.value;
+                const targetWorkspace = e.target.value;
+                if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = targetWorkspace;
+                if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = targetWorkspace;
+
+                // Automatically ensure an 'assets' folder exists in the selected workspace
+                if (targetWorkspace) {
+                    socket.emit('fs.createDir', { parentPath: targetWorkspace, folderName: 'assets' });
+                    // Also update terminal CWD for all terminals? Or just active one?
+                    // socket.emit('terminal.changeCwd', targetWorkspace); 
+                }
             });
         });
     };
@@ -1009,11 +1000,11 @@ document.addEventListener('DOMContentLoaded', () => {
     inputUpload.onchange = async () => {
         if (!inputUpload.files.length) return;
 
-        const targetDir = assignedPaths.assets || currentBrowserPath || assignedPaths.gemini || '';
-        if (!targetDir) {
-            alert("Please select or assign a storage path first!");
-            return;
-        }
+        let activeWorkspace = getActiveWorkspace();
+        // Default to home or current browsing path if no workspace selected
+        if (!activeWorkspace) activeWorkspace = currentBrowserPath || '/root';
+
+        const targetDir = `${activeWorkspace.replace(/\\/g, '/').replace(/\/$/, '')}/assets`;
 
         const formData = new FormData();
         for (const file of inputUpload.files) {
@@ -1027,9 +1018,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await resp.json();
             if (result.success) {
-                alert("Upload successful!");
+                alert("Upload successful to " + targetDir);
                 inputUpload.value = '';
-                loadDirectory(targetDir);
+                // Refresh directory listing if explorer is open
+                if (generatedModal.classList.contains('active') && explorerCurrentPath === targetDir) {
+                    openExplorer(targetDir);
+                } else {
+                    loadDirectory(targetDir);
+                }
 
                 const fileNames = Array.from(inputUpload.files).map(f => {
                     const basePath = targetDir.replace(/\\/g, '/').replace(/\/$/, '');
@@ -1158,8 +1154,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnGenerated.onclick = () => {
-        const startPath = currentBrowserPath || assignedPaths.gemini || '';
-        if (!startPath) { alert("Select a workspace folder first!"); return; }
+        const activeWs = getActiveWorkspace();
+        const startPath = activeWs || currentBrowserPath || assignedPaths.gemini || '/root';
         openExplorer(startPath);
     };
 

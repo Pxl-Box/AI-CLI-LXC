@@ -11,13 +11,13 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - `server.js`: Core Express server handling PTY, Multer uploads, and file downloads. Includes PATH injection for Ollama.
 - `public/`: Frontend assets (Xterm.js, Socket.io, mobile-responsive CSS).
 - `agents/`: Persistent JSON storage for custom AI personas.
-- `generated/`: Dynamic workspace-specific folder for AI-outputted files.
 - `proxmox-create-lxc.sh`: Interactive host-side script for customized LXC deployment.
 
 ## Workspace Mandates
 - **UI Architecture:** The sidebar must use a collapsible accordion-style layout (details/summary). Primary actions reside in a dedicated icon row in the header: **Upload**, **Folder (Explorer)**, **Floppy (Memory)**, and **Bin (Clear)**.
 - **Workspace Explorer:** The folder icon MUST launch a full-featured file explorer for the active workspace, allowing nested navigation and multi-file "Mentions."
-- **Asset Integrity:** Uploaded files MUST be stored in the "Asset Storage Path" defined in settings, defaulting to the active workspace.
+- **Asset Integrity:** Uploaded files MUST be stored in an `assets/` subfolder within the currently selected workspace. This folder is automatically created upon workspace selection.
+- **Generated Content:** The dedicated "Generated" folder is redundant; all AI-generated files and workspace-related content live within the project's own directory structure.
 - **Auto-Mention:** Successfully uploaded or selected files MUST automatically send their filename to the terminal using the format: `Attached files: "filename.ext"\r` to trigger immediate AI processing.
 - **Infrastructure Scaling:** 
     - Default deployments via `proxmox-create-lxc.sh` MUST use **6GB RAM**, **30GB Disk**, and **2 CPU Cores**.
@@ -26,6 +26,14 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **Terminal Utilities:** The "Clear Terminal" button MUST automatically execute `/clear` for AI CLIs and `clear` for standard shells using `\r\n`.
 - **System Monitoring:** The header MUST display a real-time "System Pulse" showing CPU and RAM utilization for the host container.
 - **Session Resilience:** I MUST maintain a `.gemini_recovery.json` file in the workspace root. This file acts as a "Black Box" recorder. In the event of a session crash, the next AI instance MUST read this file during the Research phase to immediately resume work without user intervention.
+
+## Recent Progress (Session: Feb 27, 2026 - Part 7)
+- **Workspace Directory Refactor:**
+    - Refactored asset management to be per-workspace. Now, selecting a project automatically ensures an `assets/` subfolder exists within its directory.
+    - Removed manual path assignments for Assets and Output (Generated) folders from the UI and logic.
+    - Declared the "generated" folder redundant, as all AI-produced files are now contained directly within the project's own folder structure.
+    - Updated the "Workspace Explorer" to start in the active project root by default.
+    - Cleaned up `server.js` by removing unused `fs.listGenerated` handler.
 
 ## Recent Progress (Session: Feb 27, 2026 - Part 6)
 - **Settings UI & Agent Hub:**
