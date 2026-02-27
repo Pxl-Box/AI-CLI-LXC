@@ -341,10 +341,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const isPrimary = (id === activeTabId);
             const isSecondary = (isSplitView && id === secondaryTabId);
 
-            data.element.classList.toggle('active', isPrimary || isSecondary);
-            data.element.classList.toggle('split', isSplitView && (isPrimary || isSecondary));
-            data.tabEl.classList.toggle('active', isPrimary);
-            data.tabEl.classList.toggle('secondary', isSecondary);
+            if (data.element) {
+                data.element.classList.toggle('active', isPrimary || isSecondary);
+                data.element.classList.toggle('split', isSplitView && (isPrimary || isSecondary));
+            }
+            if (data.tabEl) {
+                data.tabEl.classList.toggle('active', isPrimary);
+                data.tabEl.classList.toggle('secondary', isSecondary);
+            }
 
             if (isPrimary || isSecondary) {
                 setTimeout(() => {
@@ -537,7 +541,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
-        const model = document.getElementById('gemini-model-select').value;
+        const modelSelect = document.getElementById('gemini-model-select');
+        const model = modelSelect ? modelSelect.value : '';
         const ws = getActiveWorkspace() || assignedPaths.gemini;
         startAI('gemini', ws, 'gemini', model);
     });
@@ -625,7 +630,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-run-local').addEventListener('click', () => {
-        let model = document.getElementById('local-model-select').value;
+        const modelSelect = document.getElementById('local-model-select');
+        let model = modelSelect ? modelSelect.value : 'custom';
         if (model === 'custom') {
             model = prompt("Enter the Ollama model name (e.g., 'deepseek-r1:32b' or 'llama3:70b'):");
             if (!model) return;
@@ -641,7 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-pull-local').addEventListener('click', () => {
-        let model = document.getElementById('local-model-select').value;
+        const modelSelect = document.getElementById('local-model-select');
+        let model = modelSelect ? modelSelect.value : 'custom';
         if (model === 'custom') {
             model = prompt("Enter the Ollama model name to pull (e.g., 'deepseek-r1:32b'):");
             if (!model) return;
@@ -707,12 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGoDir = document.getElementById('btn-go-dir');
     if (btnGoDir && inputBrowserPath) {
         btnGoDir.addEventListener('click', () => {
-            loadDirectory(inputBrowserPath.value.trim());
+            if (inputBrowserPath) loadDirectory(inputBrowserPath.value.trim());
         });
         inputBrowserPath.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                loadDirectory(inputBrowserPath.value.trim());
+                if (inputBrowserPath) loadDirectory(inputBrowserPath.value.trim());
             }
         });
     }
@@ -1311,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Otherwise populate the settings explorer
         currentBrowserPath = data.path;
-        inputBrowserPath.value = currentBrowserPath;
+        if (inputBrowserPath) inputBrowserPath.value = currentBrowserPath;
         browserList.innerHTML = '';
         data.folders.forEach(folder => {
             const div = document.createElement('div');
@@ -1353,16 +1360,16 @@ document.addEventListener('DOMContentLoaded', () => {
             editingAgentName = agent.name;
             modalTitle.textContent = 'Edit Agent';
             btnSaveAgent.textContent = 'Save Changes';
-            inputAgentName.value = agent.name;
-            selectAgentModel.value = agent.model || '';
-            inputAgentPrompt.value = agent.prompt || '';
+            if (inputAgentName) inputAgentName.value = agent.name;
+            if (selectAgentModel) selectAgentModel.value = agent.model || '';
+            if (inputAgentPrompt) inputAgentPrompt.value = agent.prompt || '';
         } else {
             editingAgentName = null;
             modalTitle.textContent = 'Create New Agent';
             btnSaveAgent.textContent = 'Create Agent';
-            inputAgentName.value = '';
-            selectAgentModel.value = '';
-            inputAgentPrompt.value = '';
+            if (inputAgentName) inputAgentName.value = '';
+            if (selectAgentModel) selectAgentModel.value = '';
+            if (inputAgentPrompt) inputAgentPrompt.value = '';
         }
         agentModal.classList.add('active');
     };
@@ -1393,8 +1400,8 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('agents.create.response', (data) => {
         if (data.success) {
             agentModal.classList.remove('active');
-            inputAgentName.value = '';
-            inputAgentPrompt.value = '';
+            if (inputAgentName) inputAgentName.value = '';
+            if (inputAgentPrompt) inputAgentPrompt.value = '';
             loadAgents();
         } else {
             alert('Error creating agent: ' + data.error);
