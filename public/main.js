@@ -530,13 +530,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadDirectory = (dirPath) => { socket.emit('fs.list', dirPath); };
 
-    // Dropdown navigation: selecting a folder navigates into it
-    if (browserList) {
-        browserList.addEventListener('change', () => {
-            const selectedPath = browserList.value;
-            if (selectedPath) {
-                loadDirectory(selectedPath);
-                browserList.value = ''; // reset after navigating
+    // Custom Dropdown Navigation
+    const customDropdown = document.getElementById('custom-browser-dropdown');
+    const customHeader = document.getElementById('custom-browser-header');
+    const customMenu = document.getElementById('custom-browser-menu');
+    const customList = document.getElementById('custom-browser-list');
+    const customPathDisplay = document.getElementById('custom-browser-path-display');
+
+    if (customHeader && customMenu) {
+        customHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpe = customMenu.style.display === 'flex';
+            customMenu.style.display = isOpe ? 'none' : 'flex';
+            customHeader.querySelector('svg').style.transform = isOpe ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (customDropdown && !customDropdown.contains(e.target)) {
+                customMenu.style.display = 'none';
+                if (customHeader.querySelector('svg')) customHeader.querySelector('svg').style.transform = 'rotate(0deg)';
             }
         });
     }
@@ -578,15 +591,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentBrowserPath = data.path;
         if (inputBrowserPath) inputBrowserPath.value = currentBrowserPath;
-        // Populate the dropdown
-        if (browserList) {
-            browserList.innerHTML = '<option value="">-- select folder --</option>';
+        if (customPathDisplay) customPathDisplay.textContent = currentBrowserPath;
+
+        // Populate the custom list
+        if (customList) {
+            customList.innerHTML = '';
             data.folders.forEach(folder => {
-                const opt = document.createElement('option');
-                opt.value = folder.path;
-                opt.textContent = folder.name;
-                browserList.appendChild(opt);
+                const item = document.createElement('div');
+                item.className = 'browser-item';
+                item.style.padding = '0.5rem 0.75rem';
+                item.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                    </svg>
+                    <span>${folder.name}</span>
+                `;
+                item.addEventListener('click', () => {
+                    loadDirectory(folder.path);
+                    customMenu.style.display = 'none';
+                    if (customHeader.querySelector('svg')) customHeader.querySelector('svg').style.transform = 'rotate(0deg)';
+                });
+                customList.appendChild(item);
             });
+            if (data.folders.length === 0) {
+                customList.innerHTML = '<div style="padding: 0.5rem 0.75rem; color: var(--text-muted); font-size: 0.8rem; font-style: italic;">No subfolders</div>';
+            }
         }
     });
 

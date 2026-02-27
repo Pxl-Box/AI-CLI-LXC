@@ -301,19 +301,31 @@
                         <div class="form-group" style="margin: 0;">
                             <label>Browse Directories</label>
                             <p class="help-text">Navigate to a folder, then assign it below.</p>
-                            <!-- Row 1: Up + Path + Subfolder Dropdown + New Folder -->
+                            <!-- Row 1: Up, Custom Dropdown, Add Folder -->
                             <div
                                 style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: nowrap;">
                                 <button id="btn-up-dir" class="action-btn small secondary" title="Go Up One Level"
                                     style="flex-shrink: 0;">↑ Up</button>
-                                <input type="text" id="input-browser-path" value="/"
-                                    style="font-family: 'Fira Code', monospace; font-size: 0.78rem; color: var(--text-secondary); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.6rem; max-width: 150px; flex-shrink: 1;">
-                                <button id="btn-go-dir" class="action-btn small primary" title="Go to Path"
-                                    style="flex-shrink: 0;">Go</button>
-                                <select id="browser-list" class="model-select"
-                                    style="flex: 1; min-width: 80px; font-family: 'Fira Code', monospace; font-size: 0.8rem;">
-                                    <option value="">-- select folder --</option>
-                                </select>
+
+                                <div id="custom-browser-dropdown" style="flex: 1; position: relative;">
+                                    <div id="custom-browser-header"
+                                        style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 0.8rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                                        <span id="custom-browser-path-display">/root</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="opacity: 0.7; transition: transform 0.2s;">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div id="custom-browser-menu"
+                                        style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); z-index: 1000; overflow: hidden; max-height: 250px; flex-direction: column;">
+                                        <div id="custom-browser-list" style="overflow-y: auto; max-height: 250px;">
+                                            <!-- Folders injected here -->
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <button id="btn-new-folder-inline" class="icon-btn" title="Create New Folder"
                                     style="flex-shrink: 0; padding: 0.35rem;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -337,6 +349,17 @@
                                     <button id="btn-cancel-folder" class="action-btn small secondary">Cancel</button>
                                 </div>
                             </div>
+                            <!-- Advanced: Manual Path Entry -->
+                            <details style="margin-top: 0.5rem;">
+                                <summary style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer;">
+                                    Advanced: Enter Path Manually</summary>
+                                <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem; align-items: center;">
+                                    <input type="text" id="input-browser-path" placeholder="C:\..."
+                                        style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.4rem 0.6rem; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 0.82rem; outline: none; width: 100%;">
+                                    <button id="btn-go-dir" class="action-btn small primary"
+                                        title="Go to Path">Go</button>
+                                </div>
+                            </details>
                         </div>
 
                         <!-- Assignments -->
