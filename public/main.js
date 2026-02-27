@@ -510,6 +510,132 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-asset-path').value = currentBrowserPath;
     });
 
+    // --- Saved Projects Logic --- //
+    const savedProjectsListEl = document.getElementById('saved-projects-list');
+    let savedProjects = [];
+
+    const loadSavedProjects = () => {
+        const stored = localStorage.getItem('ai-saved-projects');
+        if (stored) {
+            try {
+                savedProjects = JSON.parse(stored);
+            } catch (e) {
+                savedProjects = [];
+            }
+        }
+        renderSavedProjects();
+    };
+
+    const saveSavedProjects = () => {
+        localStorage.setItem('ai-saved-projects', JSON.stringify(savedProjects));
+        renderSavedProjects();
+    };
+
+    const renderSavedProjects = () => {
+        const container = document.getElementById('saved-projects-list');
+        if (!container) return; // UI might not be there
+
+        container.innerHTML = '';
+        if (savedProjects.length === 0) {
+            container.innerHTML = '<div class="help-text" style="font-style: italic;">No saved projects yet. Navigate to a folder and save it!</div>';
+            return;
+        }
+
+        savedProjects.forEach((proj, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px;';
+
+            // Name / Path display
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'flex: 1; min-width: 0; margin-right: 0.5rem;';
+            infoDiv.innerHTML = `
+                <div style="font-weight: 500; font-size: 0.85rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.name}</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary); font-family: 'Fira Code', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${proj.path}</div>
+            `;
+
+            // Actions
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'display: flex; gap: 0.25rem; flex-shrink: 0;';
+
+            // Assign Gemini
+            const btnGemini = document.createElement('button');
+            btnGemini.className = 'action-btn small';
+            btnGemini.style.cssText = 'padding: 0.2rem 0.4rem; font-size: 0.7rem; background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: var(--brand-gemini);';
+            btnGemini.innerHTML = '<span class="model-badge gemini" style="padding: 0.1rem 0.3rem; margin: 0; background: transparent;">Gemini</span>';
+            btnGemini.title = "Assign to Gemini";
+            btnGemini.onclick = () => {
+                assignedPaths.gemini = proj.path;
+                localStorage.setItem('ai-workspace-gemini', proj.path);
+                document.getElementById('input-gemini-path').value = proj.path;
+            };
+
+            // Assign Claude
+            const btnClaude = document.createElement('button');
+            btnClaude.className = 'action-btn small';
+            btnClaude.style.cssText = 'padding: 0.2rem 0.4rem; font-size: 0.7rem; background: rgba(217, 119, 87, 0.1); border-color: rgba(217, 119, 87, 0.3); color: var(--brand-claude);';
+            btnClaude.innerHTML = '<span class="model-badge claude" style="padding: 0.1rem 0.3rem; margin: 0; background: transparent;">Claude</span>';
+            btnClaude.title = "Assign to Claude";
+            btnClaude.onclick = () => {
+                assignedPaths.claude = proj.path;
+                localStorage.setItem('ai-workspace-claude', proj.path);
+                document.getElementById('input-claude-path').value = proj.path;
+            };
+
+            // Delete
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'icon-btn';
+            btnDelete.style.cssText = 'padding: 0.2rem; color: var(--text-secondary); margin-left: 0.25rem;';
+            btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+            btnDelete.title = "Remove Project";
+            btnDelete.onclick = () => {
+                if (confirm(`Remove "${proj.name}" from saved projects?`)) {
+                    savedProjects.splice(idx, 1);
+                    saveSavedProjects();
+                }
+            };
+
+            actionsDiv.appendChild(btnGemini);
+            actionsDiv.appendChild(btnClaude);
+            actionsDiv.appendChild(btnDelete);
+
+            div.appendChild(infoDiv);
+            div.appendChild(actionsDiv);
+            container.appendChild(div);
+        });
+    };
+
+    const btnSaveProject = document.getElementById('btn-save-project');
+    if (btnSaveProject) {
+        btnSaveProject.addEventListener('click', () => {
+            if (!currentBrowserPath) {
+                alert("Please navigate to a valid folder first in the workspace explorer above.");
+                return;
+            }
+
+            // Check if already exists
+            if (savedProjects.find(p => p.path === currentBrowserPath)) {
+                alert("This path is already saved as a project.");
+                return;
+            }
+
+            // Default name to the last folder in the path
+            const defaultName = currentBrowserPath.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() || 'Root';
+
+            const name = prompt(`Enter a name for this project:\n${currentBrowserPath}`, defaultName);
+            if (name) {
+                savedProjects.push({
+                    name: name.trim(),
+                    path: currentBrowserPath,
+                    added: new Date().toISOString()
+                });
+                saveSavedProjects();
+            }
+        });
+    }
+
+    // Initialize
+    loadSavedProjects();
+
     // --- Upload & Workspace Explorer Logic ---
     const btnUpload = document.getElementById('btn-upload');
     const inputUpload = document.getElementById('input-upload');

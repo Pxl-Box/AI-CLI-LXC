@@ -265,6 +265,20 @@
                     </div>
                 </div>
 
+                <div class="form-group" style="padding-top: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4>Saved Projects</h4>
+                        <button class="action-btn small primary" id="btn-save-project" title="Save current explorer path as a project">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save Current Path
+                        </button>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for quick assignment.</p>
+                    <div id="saved-projects-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
+                        <!-- Saved projects inject here -->
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Asset Storage Path</label>
                     <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
