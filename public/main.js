@@ -601,7 +601,8 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.emit('ollama.listModels');
         }
         if (tabId === 'settings-explorer') {
-            loadDirectory(currentBrowserPath || '');
+            // Small delay to ensure pane is visible before emitting
+            setTimeout(() => loadDirectory(currentBrowserPath || ''), 50);
             if (typeof renderSavedProjects === 'function') renderSavedProjects();
         }
     };
@@ -612,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-settings').addEventListener('click', () => {
         settingsModal.classList.add('active');
-        if (!currentBrowserPath) loadDirectory('');
         // Always reset to General Tab on open
         openSettingsTab('settings-general');
     });
