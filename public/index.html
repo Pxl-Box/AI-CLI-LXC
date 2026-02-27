@@ -41,7 +41,7 @@
                     <span class="status-text">Connected</span>
                     <span class="cwd-text" id="current-dir">~</span>
                 </div>
-                <div class="system-pulse" style="display: flex; gap: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                <div class="system-pulse">
                     <span id="sys-cpu">CPU: --%</span> | 
                     <span id="sys-ram">RAM: --/-- GB</span>
                 </div>
@@ -335,9 +335,14 @@
                 <button class="close-btn" id="btn-close-generated">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="browser-header" style="margin-bottom: 1rem;">
+                <div class="browser-header" style="margin-bottom: 0.5rem;">
                     <button id="btn-explorer-up" class="action-btn small secondary" style="padding: 0.4rem 0.8rem;">↑ Up</button>
                     <span id="explorer-current-path" class="help-text" style="margin: 0; padding-left: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.75rem;">/</span>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <input type="text" id="input-explorer-search" placeholder="Search files in current folder..." 
+                        style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;"
+                        autocomplete="off">
                 </div>
                 <div class="browser-list" id="generated-list" style="height: 300px;">
                     <!-- Files and Folders inject here -->

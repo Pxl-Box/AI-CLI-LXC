@@ -182,6 +182,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const instance = terminals.get(tabId);
         if (instance) {
             instance.term.write(data);
+            
+            // Update usage bars if this is the active tab
+            if (tabId === activeTabId) {
+                const activeTabEl = document.querySelector('.tab.active .tab-title');
+                const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
+                
+                if (title.includes('gemini')) {
+                    if (title.includes('3')) updateUsageBar('gemini-3', 2);
+                    else if (title.includes('2.5')) updateUsageBar('gemini-2.5', 2);
+                } else if (title.includes('claude')) {
+                    updateUsageBar('claude', 3);
+                }
+            }
         }
     });
 
@@ -217,36 +230,32 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
         const active = terminals.get(activeTabId);
         if (active) active.term.focus();
+    };
 
-        // Simulate activity in the usage bars
-        const activeTabEl = document.querySelector(".tab.active .tab-title");
-        const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : "";
-        
-        if (title.includes("gemini")) {
-            if (title.includes("gemini-3") || title.includes("(3")) {
-                updateUsageBar("gemini-3", 20);
-            } else if (title.includes("gemini-2.5") || title.includes("(2.5")) {
-                updateUsageBar("gemini-2.5", 15);
-            }
-        } else if (title.includes("claude") || title.includes("ollama")) {
-            updateUsageBar("claude", 25);
-        }
+    const usageState = {
+        'gemini-3': 0,
+        'gemini-2.5': 0,
+        'claude': 0
     };
 
     const updateUsageBar = (type, increment) => {
-        const fill = document.getElementById(`usage-${type}`);
-        if (fill) {
-            let width = parseInt(fill.style.width) || 0;
-            width = Math.min(100, width + increment);
-            fill.style.width = width + '%';
-            
-            // Slowly drain over time
-            setTimeout(() => {
-                let currentWidth = parseInt(fill.style.width) || 0;
-                fill.style.width = Math.max(0, currentWidth - 5) + '%';
-            }, 5000);
+        if (usageState.hasOwnProperty(type)) {
+            usageState[type] = Math.min(100, usageState[type] + increment);
+            const fill = document.getElementById(`usage-${type}`);
+            if (fill) fill.style.width = usageState[type] + '%';
         }
     };
+
+    // Global drain interval (every 2 seconds)
+    setInterval(() => {
+        Object.keys(usageState).forEach(type => {
+            if (usageState[type] > 0) {
+                usageState[type] = Math.max(0, usageState[type] - 2);
+                const fill = document.getElementById(`usage-${type}`);
+                if (fill) fill.style.width = usageState[type] + '%';
+            }
+        });
+    }, 2000);
 
     // Helper to start AI in a specific tab
     const startAI = (aiName, path, color, model = null) => {
@@ -417,9 +426,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const explorerPathEl = document.getElementById('explorer-current-path');
     const btnExplorerUp = document.getElementById('btn-explorer-up');
     const btnMentionAll = document.getElementById('btn-mention-all');
+    const inputExplorerSearch = document.getElementById('input-explorer-search');
 
     let explorerCurrentPath = '';
     let explorerFiles = [];
+    let explorerFolders = [];
+
+    const renderExplorer = (query = '') => {
+        generatedList.innerHTML = '';
+        const lowerQuery = query.toLowerCase();
+
+        const filteredFolders = explorerFolders.filter(f => f.name.toLowerCase().includes(lowerQuery));
+        const filteredFiles = explorerFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
+
+        filteredFolders.forEach(folder => {
+            const div = document.createElement('div');
+            div.className = 'browser-item';
+            div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> <strong>${folder.name}/</strong>`;
+            div.onclick = () => openExplorer(folder.path);
+            generatedList.appendChild(div);
+        });
+
+        filteredFiles.forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'browser-item';
+            div.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${file.name}</span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); document.getElementById('generated-modal').classList.remove('active');">Mention</button>
+                        <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
+                    </div>
+                </div>
+            `;
+            generatedList.appendChild(div);
+        });
+    };
+
+    inputExplorerSearch.oninput = (e) => {
+        renderExplorer(e.target.value);
+    };
 
     btnUpload.onclick = () => {
         inputUpload.click();
@@ -484,6 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert("Project imported successfully!");
                 loadDirectory(targetDir);
+                
+                // Auto-mention the imported zip
+                const fileName = inputWorkspaceZip.files[0].name;
+                socket.emit("terminal.toTerm", { tabId: activeTabId, data: `Imported workspace from: "${fileName}"\r` });
             }
             btnImportZip.disabled = false;
             btnImportZip.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload & Extract ZIP`;
@@ -497,6 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openExplorer = (path) => {
         explorerCurrentPath = path;
         explorerPathEl.textContent = path;
+        inputExplorerSearch.value = ''; // Reset search on folder change
         socket.emit('fs.list', path);
         generatedModal.classList.add('active');
     };
@@ -532,32 +584,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If modal is active, populate the workspace explorer
         if (generatedModal.classList.contains('active') && data.path === explorerCurrentPath) {
-            generatedList.innerHTML = '';
+            explorerFolders = data.folders || [];
             explorerFiles = data.files || [];
-
-            data.folders.forEach(folder => {
-                const div = document.createElement('div');
-                div.className = 'browser-item';
-                div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> <strong>${folder.name}/</strong>`;
-                div.onclick = () => openExplorer(folder.path);
-                generatedList.appendChild(div);
-            });
-
-            explorerFiles.forEach(file => {
-                const div = document.createElement('div');
-                div.className = 'browser-item';
-                div.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                        <span>${file.name}</span>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="action-btn small secondary" onclick="socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\r' }); generatedModal.classList.remove('active');">Mention</button>
-                            <button class="action-btn small primary" onclick="window.location.href='/download?path=${encodeURIComponent(file.path)}'">Download</button>
-                        </div>
-                    </div>
-                `;
-                generatedList.appendChild(div);
-            });
+            renderExplorer(inputExplorerSearch.value);
             return;
         }
 
@@ -589,13 +618,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputAgentName = document.getElementById('input-agent-name');
     const selectAgentModel = document.getElementById('select-agent-model');
     const inputAgentPrompt = document.getElementById('input-agent-prompt');
+    const modalTitle = agentModal.querySelector('h3');
+    let editingAgentName = null;
 
-    const loadAgents = () => {
-        socket.emit('agents.list');
+    const openAgentModal = (agent = null) => {
+        if (agent) {
+            editingAgentName = agent.name;
+            modalTitle.textContent = 'Edit Agent';
+            btnSaveAgent.textContent = 'Save Changes';
+            inputAgentName.value = agent.name;
+            selectAgentModel.value = agent.model || '';
+            inputAgentPrompt.value = agent.prompt || '';
+        } else {
+            editingAgentName = null;
+            modalTitle.textContent = 'Create New Agent';
+            btnSaveAgent.textContent = 'Create Agent';
+            inputAgentName.value = '';
+            selectAgentModel.value = '';
+            inputAgentPrompt.value = '';
+        }
+        agentModal.classList.add('active');
     };
 
     btnAddAgent.onclick = () => {
-        agentModal.classList.add('active');
+        openAgentModal();
     };
 
     btnCloseAgent.onclick = () => {
@@ -608,6 +654,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const prompt = inputAgentPrompt.value.trim();
 
         if (name && prompt) {
+            if (editingAgentName && editingAgentName !== name) {
+                // If renamed, delete the old one first or handle renaming
+                socket.emit('agents.delete', editingAgentName);
+            }
             socket.emit('agents.create', { name, model, prompt });
         } else {
             alert('Please provide both a name and instructions.');
@@ -638,9 +688,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="agent-name">${agent.name}</span>
                     <span class="agent-model">${agent.model}</span>
                 </div>
-                <button class="agent-delete-btn icon-btn" title="Delete Agent">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                </button>
+                <div class="agent-actions">
+                    <button class="agent-edit-btn icon-btn" title="Edit Agent">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="agent-delete-btn icon-btn" title="Delete Agent">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                </div>
             `;
             
             div.onclick = (e) => {
@@ -648,6 +703,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (confirm(`Are you sure you want to delete "${agent.name}"?`)) {
                         socket.emit('agents.delete', agent.name);
                     }
+                    return;
+                }
+                if (e.target.closest('.agent-edit-btn')) {
+                    openAgentModal(agent);
                     return;
                 }
                 launchAgent(agent);

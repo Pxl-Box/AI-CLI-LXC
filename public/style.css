@@ -120,6 +120,15 @@ body {
     color: var(--text-muted);
 }
 
+.system-pulse {
+    display: flex;
+    gap: 0.5rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
 .dot {
     width: 8px;
     height: 8px;
@@ -808,6 +817,17 @@ body {
     min-width: 0;
 }
 
+.agent-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.agent-item:hover .agent-actions {
+    opacity: 1;
+}
+
 .agent-name {
     font-size: 0.85rem;
     font-weight: 500;
@@ -821,18 +841,14 @@ body {
     color: var(--text-muted);
 }
 
-.agent-delete-btn {
-    opacity: 0;
-    color: var(--text-muted);
-    transition: all 0.2s;
-}
-
-.agent-item:hover .agent-delete-btn {
-    opacity: 1;
-}
-
 .agent-delete-btn:hover {
     color: var(--brand-danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.agent-edit-btn:hover {
+    color: var(--brand-gemini);
+    background: rgba(139, 92, 246, 0.1);
 }
 
 /* Form Styles */
