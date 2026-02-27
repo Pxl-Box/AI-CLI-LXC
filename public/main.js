@@ -185,6 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    socket.on('sys.stats', (stats) => {
+        const cpuEl = document.getElementById('sys-cpu');
+        const ramEl = document.getElementById('sys-ram');
+        if (cpuEl) cpuEl.textContent = `CPU: ${stats.cpu}%`;
+        if (ramEl) ramEl.textContent = `RAM: ${stats.memUsed}/${stats.memTotal} GB`;
+    });
+
     socket.on('connect', () => {
         statusDot.className = 'dot online';
         statusText.textContent = 'Connected';

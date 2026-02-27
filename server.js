@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const unzipper = require('unzipper');
+const si = require('systeminformation');
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +66,22 @@ app.get('/download', (req, res) => {
         res.status(404).send('File not found');
     }
 });
+
+// Broadcast system stats every 3 seconds
+setInterval(async () => {
+    try {
+        const mem = await si.mem();
+        const currentLoad = await si.currentLoad();
+        io.emit('sys.stats', {
+            cpu: currentLoad.currentLoad.toFixed(1),
+            memUsed: (mem.active / 1024 / 1024 / 1024).toFixed(2),
+            memTotal: (mem.total / 1024 / 1024 / 1024).toFixed(2),
+            memPercent: ((mem.active / mem.total) * 100).toFixed(1)
+        });
+    } catch (error) {
+        console.error('Error fetching system stats:', error);
+    }
+}, 3000);
 
 io.on('connection', (socket) => {
     console.log(`[+] Client connected: ${socket.id}`);
