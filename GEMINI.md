@@ -16,7 +16,7 @@ This directory is the primary workspace for maintaining and extending the web-ba
 ## Workspace Mandates
 - **UI Architecture:** The sidebar must use a collapsible accordion-style layout (details/summary). Primary actions reside in a dedicated icon row in the header: **Upload**, **Folder (Explorer)**, **Floppy (Memory)**, and **Bin (Clear)**.
 - **Workspace Explorer:** The folder icon MUST launch a full-featured file explorer for the active workspace, allowing nested navigation and multi-file "Mentions."
-- **Asset Integrity:** Uploaded files MUST be stored in an `assets/` subfolder within the currently selected workspace. This folder is automatically created upon workspace selection.
+- **Asset Integrity:** Uploaded files MUST be stored in an `workspace-uploads/` subfolder within the currently selected workspace. This folder is automatically created upon workspace selection.
 - **Generated Content:** The dedicated "Generated" folder is redundant; all AI-generated files and workspace-related content live within the project's own directory structure.
 - **Auto-Mention:** Successfully uploaded or selected files MUST automatically send their filename to the terminal using the format: `Attached files: "filename.ext"\r` to trigger immediate AI processing.
 - **Infrastructure Scaling:** 
@@ -29,7 +29,7 @@ This directory is the primary workspace for maintaining and extending the web-ba
 
 ## Recent Progress (Session: Feb 27, 2026 - Part 7)
 - **Workspace Directory Refactor:**
-    - Refactored asset management to be per-workspace. Now, selecting a project automatically ensures an `assets/` subfolder exists within its directory.
+    - Refactored asset management to be per-workspace. Now, selecting a project automatically ensures an `workspace-uploads/` subfolder exists within its directory.
     - Removed manual path assignments for Assets and Output (Generated) folders from the UI and logic.
     - Declared the "generated" folder redundant, as all AI-produced files are now contained directly within the project's own folder structure.
     - Updated the "Workspace Explorer" to start in the active project root by default.

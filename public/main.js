@@ -162,9 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
             data.workspace = targetWorkspace;
         }
 
-        // Automatically ensure an 'assets' folder exists in the selected workspace
+        // Automatically ensure an 'workspace-uploads' folder exists in the selected workspace
         if (targetWorkspace) {
-            socket.emit('fs.createDir', { parentPath: targetWorkspace, folderName: 'assets' });
+            socket.emit('fs.createDir', { parentPath: targetWorkspace, folderName: 'workspace-uploads' });
         }
     };
 
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Default to home or current browsing path if no workspace selected
         if (!activeWorkspace) activeWorkspace = currentBrowserPath || '/root';
 
-        const targetDir = `${activeWorkspace.replace(/\\/g, '/').replace(/\/$/, '')}/assets`;
+        const targetDir = `${activeWorkspace.replace(/\\/g, '/').replace(/\/$/, '')}/workspace-uploads`;
 
         const formData = new FormData();
         for (const file of inputUpload.files) {
