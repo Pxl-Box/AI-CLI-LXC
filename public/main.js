@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="tab-title">${title}</span>
             <button class="tab-close-btn">&times;</button>
         `;
-        
+
         // Tab click to switch
         tabEl.onclick = (e) => {
             if (e.target.classList.contains('tab-close-btn')) return;
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const termWrapper = document.createElement('div');
         termWrapper.className = `terminal-wrapper ${tabId === activeTabId ? 'active' : ''}`;
         termWrapper.id = `wrapper-${tabId}`;
-        
+
         const termEl = document.createElement('div');
         termEl.className = 'terminal-instance';
         termWrapper.appendChild(termEl);
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         terminals.forEach((data, id) => {
             const isPrimary = (id === activeTabId);
             const isSecondary = (isSplitView && id === secondaryTabId);
-            
+
             data.element.classList.toggle('active', isPrimary || isSecondary);
             data.element.classList.toggle('split', isSplitView && (isPrimary || isSecondary));
             data.tabEl.classList.toggle('active', isPrimary);
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeTab = (tabId) => {
         if (tabId === 'default' && terminals.size === 1) return; // Don't close last tab
-        
+
         const data = terminals.get(tabId);
         if (data) {
             data.term.dispose();
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial setup: Restore or create default
     const savedState = localStorage.getItem('terminal-tabs-state');
     tabsContainer.innerHTML = '';
-    
+
     if (savedState) {
         try {
             const state = JSON.parse(savedState);
@@ -244,12 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const instance = terminals.get(tabId);
         if (instance) {
             instance.term.write(data);
-            
+
             // Update usage bars if this is the active tab
             if (tabId === activeTabId) {
                 const activeTabEl = document.querySelector('.tab.active .tab-title');
                 const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
-                
+
                 if (title.includes('gemini')) {
                     if (title.includes('3')) updateUsageBar('gemini-3', 2);
                     else if (title.includes('2.5')) updateUsageBar('gemini-2.5', 2);
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = `${aiName}-${Math.random().toString(36).substr(2, 5)}`;
         const baseTitle = aiName.charAt(0).toUpperCase() + aiName.slice(1);
         const title = model ? `${baseTitle} (${model})` : baseTitle;
-        
+
         socket.emit('terminal.createTab', id);
         const term = createTerminalInstance(id, title);
         switchTab(id);
@@ -361,17 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.success && data.models.length > 0) {
             // Keep "Custom" at the end
             const customOption = localModelSelect.querySelector('option[value="custom"]');
-            
+
             // Clear existing options except maybe a "Pull new..." placeholder if we want
             localModelSelect.innerHTML = '';
-            
+
             data.models.forEach(model => {
                 const opt = document.createElement('option');
                 opt.value = model;
                 opt.textContent = model;
                 localModelSelect.appendChild(opt);
             });
-            
+
             if (customOption) localModelSelect.appendChild(customOption);
         }
     });
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-commit').addEventListener('click', () => {
         const activeTabEl = document.querySelector('.tab.active .tab-title');
         const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
-        
+
         if (title.includes('gemini') || title.includes('claude')) {
             sendCommand('Please update the GEMINI.md file in this workspace to reflect our current progress, any new mandates, and the updated project context.');
         } else {
@@ -425,10 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
             active.term.clear();
             const activeTabEl = document.querySelector('.tab.active .tab-title');
             const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
-            
+
             // If it's an AI CLI, use /clear, otherwise use standard clear
             const clearCmd = (title.includes('gemini') || title.includes('claude')) ? '/clear' : 'clear';
-            
+
             // Send command with both \r and \n to ensure execution across different shells/REPLs
             socket.emit("terminal.toTerm", { tabId: activeTabId, data: clearCmd + "\r\n" });
             active.term.focus();
@@ -482,9 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('fs.createDir.response', (data) => {
-        if (data.success) { 
-            inputNewFolder.value = ''; 
-            loadDirectory(currentBrowserPath); 
+        if (data.success) {
+            inputNewFolder.value = '';
+            loadDirectory(currentBrowserPath);
             // Also refresh explorer if it's open
             if (generatedModal.classList.contains('active')) {
                 openExplorer(explorerCurrentPath);
@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
             previewCode.textContent = `Error: ${data.error}`;
             return;
         }
-        
+
         // Detect language based on extension
         const ext = data.path.split('.').pop().toLowerCase();
         let lang = 'javascript';
@@ -552,10 +552,10 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (ext === 'sh' || ext === 'bash') lang = 'bash';
         else if (ext === 'md') lang = 'markdown';
         else if (ext === 'html') lang = 'markup';
-        
+
         previewCode.className = `language-${lang}`;
         previewCode.textContent = data.content;
-        
+
         // Trigger Prism highlighting
         if (window.Prism) {
             window.Prism.highlightElement(previewCode);
@@ -602,24 +602,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; min-width: 0;">
                     <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 0.5rem;">${file.name}</span>
                     <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
-                        <button class="action-btn small secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Peek Content" onclick="event.stopPropagation(); openPreview('${file.path.replace(/\\/g, '/')}');">Peek</button>
-                        <button class="action-btn small secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'Attached files: \"${file.name}\"\\r' }); document.getElementById('generated-modal').classList.remove('active');">Mention</button>
-                        <button class="action-btn small primary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" onclick="event.stopPropagation(); window.location.href='/download?path=${encodeURIComponent(file.path)}'">Down</button>
+                        <button class="action-btn small secondary btn-peek" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="Peek Content">Peek</button>
+                        <button class="action-btn small secondary btn-mention" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">Mention</button>
+                        <button class="action-btn small primary btn-down" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;">Down</button>
                     </div>
                 </div>
             `;
-            
+
+            const btnPeek = div.querySelector('.btn-peek');
+            if (btnPeek) btnPeek.onclick = (e) => { e.stopPropagation(); openPreview(file.path.replace(/\\/g, '/')); };
+
+            const btnMention = div.querySelector('.btn-mention');
+            if (btnMention) btnMention.onclick = (e) => {
+                e.stopPropagation();
+                socket.emit('terminal.toTerm', { tabId: activeTabId, data: `Attached files: "${file.path.replace(/\\/g, '/')}"\r` });
+                document.getElementById('generated-modal').classList.remove('active');
+            };
+
+            const btnDown = div.querySelector('.btn-down');
+            if (btnDown) btnDown.onclick = (e) => {
+                e.stopPropagation();
+                window.location.href = `/download?path=${encodeURIComponent(file.path)}`;
+            };
+
             // Toggle selection on click
             div.onclick = (e) => {
                 if (e.target.tagName === 'BUTTON') return;
                 const checkbox = div.querySelector('.file-checkbox');
                 if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
-                
+
                 if (checkbox.checked) selectedFiles.add(file.name);
                 else selectedFiles.delete(file.name);
                 updateSelectionUI();
             };
-            
+
             generatedList.appendChild(div);
         });
     };
@@ -634,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputUpload.onchange = async () => {
         if (!inputUpload.files.length) return;
-        
+
         const targetDir = assignedPaths.assets || currentBrowserPath || assignedPaths.gemini || '';
         if (!targetDir) {
             alert("Please select or assign a storage path first!");
@@ -655,9 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert("Upload successful!");
                 inputUpload.value = '';
-                loadDirectory(targetDir); 
+                loadDirectory(targetDir);
 
-                const fileNames = Array.from(inputUpload.files).map(f => `"${f.name}"`).join(', ');
+                const fileNames = Array.from(inputUpload.files).map(f => {
+                    const basePath = targetDir.replace(/\\/g, '/').replace(/\/$/, '');
+                    return `"${basePath}/${f.name}"`;
+                }).join(', ');
                 const attachmentMsg = `Attached files: ${fileNames}\r`;
                 socket.emit("terminal.toTerm", { tabId: activeTabId, data: attachmentMsg });
             }
@@ -691,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert("Project imported successfully!");
                 loadDirectory(targetDir);
-                
+
                 // Auto-mention the imported zip
                 const fileName = inputWorkspaceZip.files[0].name;
                 socket.emit("terminal.toTerm", { tabId: activeTabId, data: `Imported workspace from: "${fileName}"\r` });
@@ -739,14 +758,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnGatherContext.onclick = () => {
         const smartFiles = ['gemini.md', 'server.js', 'package.json', '.env.example', 'readme.md', 'install.sh', 'setup-lxc.sh'];
         let gatheredCount = 0;
-        
+
         explorerFiles.forEach(file => {
             if (smartFiles.includes(file.name.toLowerCase())) {
                 selectedFiles.add(file.name);
                 gatheredCount++;
             }
         });
-        
+
         if (gatheredCount > 0) {
             renderExplorer(inputExplorerSearch.value);
             updateSelectionUI();
@@ -757,14 +776,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnMentionSelected.onclick = () => {
         if (selectedFiles.size === 0) return;
-        const names = Array.from(selectedFiles).map(name => `"${name}"`).join(', ');
+        const basePath = explorerCurrentPath.replace(/\\/g, '/').replace(/\/$/, '');
+        const names = Array.from(selectedFiles).map(name => `"${basePath}/${name}"`).join(', ');
         socket.emit('terminal.toTerm', { tabId: activeTabId, data: `Attached files: ${names}\r` });
         generatedModal.classList.remove('active');
     };
 
     btnMentionAll.onclick = () => {
         if (!explorerFiles.length) return;
-        const names = explorerFiles.map(f => `"${f.name}"`).join(', ');
+        const names = explorerFiles.map(f => `"${f.path.replace(/\\/g, '/')}"`).join(', ');
         socket.emit('terminal.toTerm', { tabId: activeTabId, data: `Attached files: ${names}\r` });
         generatedModal.classList.remove('active');
     };
@@ -892,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             `;
-            
+
             div.onclick = (e) => {
                 if (e.target.closest('.agent-delete-btn')) {
                     if (confirm(`Are you sure you want to delete "${agent.name}"?`)) {
@@ -920,7 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const launchAgent = (agent) => {
         const id = `agent-${Math.random().toString(36).substr(2, 5)}`;
         const title = agent.name;
-        
+
         socket.emit('terminal.createTab', id);
         createTerminalInstance(id, title);
         switchTab(id);
