@@ -55,7 +55,8 @@ body {
 }
 
 .sidebar-toggle {
-    display: none; /* Hidden by default on desktop */
+    display: none;
+    /* Hidden by default on desktop */
     margin-right: 0.5rem;
 }
 
@@ -71,7 +72,7 @@ body {
 
     .workspace-container.sidebar-active .sidebar {
         transform: translateX(0);
-        box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
     }
 
     .sidebar-toggle {
@@ -377,7 +378,8 @@ body {
     border: 1px solid var(--border-color);
     border-bottom: none;
     border-radius: 10px 10px 0 0;
-    padding: 0; /* Changed from 0.75rem 1rem to handle tabs */
+    padding: 0;
+    /* Changed from 0.75rem 1rem to handle tabs */
 }
 
 .window-controls {
@@ -391,11 +393,13 @@ body {
     flex: 1;
     display: flex;
     overflow-x: auto;
-    scrollbar-width: none; /* Hide scrollbar Firefox */
+    scrollbar-width: none;
+    /* Hide scrollbar Firefox */
 }
 
 .terminal-tabs::-webkit-scrollbar {
-    display: none; /* Hide scrollbar Chrome/Safari */
+    display: none;
+    /* Hide scrollbar Chrome/Safari */
 }
 
 .tab {
@@ -456,7 +460,8 @@ body {
 }
 
 .terminal-wrapper {
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     width: 100%;
     height: 100%;
 }
@@ -470,12 +475,14 @@ body {
     background: #000000;
     border: 1px solid var(--border-color);
     border-radius: 0 0 10px 10px;
-    padding: 0; /* Remove default padding for internal wrappers */
+    padding: 0;
+    /* Remove default padding for internal wrappers */
     overflow: hidden;
     min-height: 0;
     position: relative;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    display: flex; /* Support split view */
+    display: flex;
+    /* Support split view */
 }
 
 .terminal-wrapper.split {
@@ -590,7 +597,8 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     width: 90%;
-    max-width: 450px;
+    max-width: 800px;
+    /* Wider limit */
     padding: 1.5rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     transform: translateY(20px);
@@ -598,6 +606,13 @@ body {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+}
+
+/* For smaller screens, revert the grid layout in the body to a column */
+@media (max-width: 768px) {
+    .modal-body {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 .modal-overlay.active .modal-content {
@@ -616,19 +631,35 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.modal-body>.form-group {
+    margin-bottom: 0;
+}
+
+/* Make some elements span full width if needed */
+.modal-body>.form-group:last-child {
+    grid-column: 1 / -1;
 }
 
 .modal-body::-webkit-scrollbar {
     width: 6px;
 }
+
 .modal-body::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
 }
+
 .modal-body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 4px;
 }
+
 .modal-body::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
