@@ -84,7 +84,22 @@ body {
 }
 
 .sidebar-header {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.header-actions .icon-btn {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.6rem;
+    border-radius: 6px;
 }
 
 .sidebar-header h2 {
@@ -125,23 +140,62 @@ body {
     flex: 1;
     overflow-y: auto;
     scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-.quick-actions::-webkit-scrollbar {
+.quick-actions details {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.quick-actions details[open] {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.quick-actions summary {
+    list-style: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    outline: none;
+}
+
+.quick-actions summary::-webkit-details-marker {
     display: none;
 }
 
-.quick-actions h3 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
-    margin-top: 1.5rem;
+.quick-actions summary::after {
+    content: "↓";
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    opacity: 0.4;
 }
 
-.quick-actions h3:first-child {
-    margin-top: 0;
+.quick-actions details[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.quick-actions summary:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.section-content {
+    padding: 0.75rem 1rem 1.25rem 1rem;
+    border-top: 1px solid var(--border-color);
 }
 
 /* Usage Stats Styling */
