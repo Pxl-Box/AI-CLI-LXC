@@ -341,13 +341,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     };
 
+    const getActiveWorkspace = () => {
+        const select = document.getElementById('active-workspace-select');
+        return select && select.value ? select.value : '';
+    };
+
     document.getElementById('btn-gemini').addEventListener('click', () => {
         const model = document.getElementById('gemini-model-select').value;
-        startAI('gemini', assignedPaths.gemini, 'gemini', model);
+        const ws = getActiveWorkspace() || assignedPaths.gemini;
+        startAI('gemini', ws, 'gemini', model);
     });
 
     document.getElementById('btn-claude').addEventListener('click', () => {
-        startAI('claude', assignedPaths.claude, 'claude');
+        const ws = getActiveWorkspace() || assignedPaths.claude;
+        startAI('claude', ws, 'claude');
     });
 
     // --- Local LLM (Ollama) Logic ---
@@ -602,6 +609,23 @@ document.addEventListener('DOMContentLoaded', () => {
             div.appendChild(actionsDiv);
             container.appendChild(div);
         });
+
+        // Populate Active Workspace Dropdown
+        const activeWsSelect = document.getElementById('active-workspace-select');
+        if (activeWsSelect) {
+            const currentSelection = activeWsSelect.value;
+            activeWsSelect.innerHTML = '<option value="">Default (~)</option>';
+            savedProjects.forEach(proj => {
+                const opt = document.createElement('option');
+                opt.value = proj.path;
+                opt.textContent = proj.name;
+                activeWsSelect.appendChild(opt);
+            });
+            // Try to retain previous selection
+            if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
+                activeWsSelect.value = currentSelection;
+            }
+        }
     };
 
     const btnSaveProject = document.getElementById('btn-save-project');
@@ -836,6 +860,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert("Project imported successfully!");
                 loadDirectory(targetDir);
+
+                // Auto-save as project if not already
+                if (!savedProjects.find(p => p.path === targetDir)) {
+                    const defaultName = targetDir.replace(/\\/g, '/').replace(/\/$/, '').split('/').pop() || 'Imported Workspace';
+                    savedProjects.push({
+                        name: defaultName,
+                        path: targetDir,
+                        added: new Date().toISOString()
+                    });
+                    saveSavedProjects();
+                    // Set it as active
+                    const activeSelect = document.getElementById('active-workspace-select');
+                    if (activeSelect) activeSelect.value = targetDir;
+                }
 
                 // Auto-mention the imported zip
                 const fileName = inputWorkspaceZip.files[0].name;
@@ -1073,7 +1111,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const aiName = agent.model === 'claude' ? 'claude' : 'gemini';
         const modelArg = (agent.model && agent.model !== '' && agent.model !== 'claude') ? ` -m ${agent.model}` : '';
-        const path = assignedPaths[aiName];
+        const activeSelect = document.getElementById('active-workspace-select');
+        const activeWs = activeSelect && activeSelect.value ? activeSelect.value : '';
+        const path = activeWs || assignedPaths[aiName];
 
         setTimeout(() => {
             if (path) {
