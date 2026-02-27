@@ -77,11 +77,13 @@
                 <h3>Local LLMs (Ollama)</h3>
                 <div class="launcher-group">
                     <select id="local-model-select" class="model-select">
-                        <option value="deepseek-r1">DeepSeek R1</option>
-                        <option value="llama3">Llama 3</option>
-                        <option value="mistral">Mistral</option>
-                        <option value="codellama">CodeLlama</option>
-                        <option value="phi3">Phi-3</option>
+                        <option value="deepseek-r1:1.5b">DeepSeek R1 (1.5b)</option>
+                        <option value="deepseek-r1:7b">DeepSeek R1 (7b)</option>
+                        <option value="llama3:8b">Llama 3 (8b)</option>
+                        <option value="mistral:7b">Mistral (7b)</option>
+                        <option value="codellama:7b">CodeLlama (7b)</option>
+                        <option value="phi3:3.8b">Phi-3 (3.8b)</option>
+                        <option value="custom">Custom Model...</option>
                     </select>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="action-btn primary" id="btn-run-local" style="flex: 1; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1);">

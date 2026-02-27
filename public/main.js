@@ -272,7 +272,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Local LLM (Ollama) Logic ---
     document.getElementById('btn-run-local').addEventListener('click', () => {
-        const model = document.getElementById('local-model-select').value;
+        let model = document.getElementById('local-model-select').value;
+        if (model === 'custom') {
+            model = prompt("Enter the Ollama model name (e.g., deepseek-r1:32b):");
+            if (!model) return;
+        }
         const id = `ollama-${Math.random().toString(36).substr(2, 5)}`;
         socket.emit('terminal.createTab', id);
         createTerminalInstance(id, `Ollama: ${model}`);
@@ -284,7 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-pull-local').addEventListener('click', () => {
-        const model = document.getElementById('local-model-select').value;
+        let model = document.getElementById('local-model-select').value;
+        if (model === 'custom') {
+            model = prompt("Enter the Ollama model name to pull (e.g., deepseek-r1:32b):");
+            if (!model) return;
+        }
         const id = `ollama-pull-${Math.random().toString(36).substr(2, 5)}`;
         socket.emit('terminal.createTab', id);
         createTerminalInstance(id, `Pulling: ${model}`);
