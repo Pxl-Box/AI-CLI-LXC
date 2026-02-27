@@ -27,6 +27,20 @@ This directory is the primary workspace for maintaining and extending the web-ba
 - **System Monitoring:** The header MUST display a real-time "System Pulse" showing CPU and RAM utilization for the host container.
 - **Session Resilience:** I MUST maintain a `.gemini_recovery.json` file in the workspace root. This file acts as a "Black Box" recorder. In the event of a session crash, the next AI instance MUST read this file during the Research phase to immediately resume work without user intervention.
 
+## Recent Progress (Session: Feb 27, 2026 - Part 6)
+- **Settings UI & Agent Hub:**
+    - Created a dedicated **Agents Tab** in Settings for centralized persona management (create, edit, delete).
+    - Synced agent lists between the sidebar and settings modal for real-time UI consistency.
+    - **Local LLM Support:** Integrated installed Ollama models into Custom Agents model selection and launch logic.
+- **Directory Browser Refactor:**
+    - Reverted the browse functionality to a stylized dropdown folder explorer with subfolder list and icons.
+    - Added an "Advanced" manual path entry section hidden behind an accordion.
+- **Auth Verification:**
+    - Implemented backend verification for GitHub, Claude, and Gemini auth states (checking hosts/config files).
+    - Added green "✓ Linked" status indicators to login buttons in Settings.
+- **Resilience:**
+    - Hardened directory listing with `try/catch` blocks for `fs.statSync` and permission errors to prevent silent UI crashes on Windows.
+
 ## Recent Progress (Session: Feb 27, 2026 - Part 5)
 - **Settings UI Refactor:**
     - Transitioned the Settings Modal from a scrollable list to a **Tabbed Sidebar Interface** for better organization.

@@ -435,16 +435,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (data.success && data.models.length > 0) {
             // Keep "Custom" at the end
-            const customOption = localModelSelect.querySelector('option[value="custom"]');
+            const customOption = localModelSelect ? localModelSelect.querySelector('option[value="custom"]') : null;
 
             // Clear existing options except maybe a "Pull new..." placeholder if we want
-            localModelSelect.innerHTML = '';
+            if (localModelSelect) localModelSelect.innerHTML = '';
+
+            const agentModelSelect = document.getElementById('select-agent-model');
+            if (agentModelSelect) {
+                // Clear existing dynamically added ollama options
+                Array.from(agentModelSelect.options).forEach(opt => {
+                    if (opt.value.startsWith('ollama:')) opt.remove();
+                });
+            }
 
             data.models.forEach(model => {
-                const opt = document.createElement('option');
-                opt.value = model;
-                opt.textContent = model;
-                localModelSelect.appendChild(opt);
+                // Local AIs tab dropdown
+                if (localModelSelect) {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.textContent = model;
+                    localModelSelect.appendChild(opt);
+                }
+
+                // Custom Agents tab dropdown
+                if (agentModelSelect) {
+                    const agentOpt = document.createElement('option');
+                    agentOpt.value = `ollama:${model}`;
+                    agentOpt.textContent = `Local: ${model}`;
+                    agentModelSelect.appendChild(agentOpt);
+                }
 
                 // Populate settings list
                 if (localAiList) {
@@ -463,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            if (customOption) localModelSelect.appendChild(customOption);
+            if (localModelSelect && customOption) localModelSelect.appendChild(customOption);
         }
     });
 
@@ -642,6 +661,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Trigger specific loads
+        if (tabId === 'settings-general') {
+            socket.emit('auth.checkStatus');
+        }
+        if (tabId === 'settings-agents') {
+            socket.emit('agents.list');
+        }
         if (tabId === 'settings-localai') {
             socket.emit('ollama.listModels');
         }
@@ -679,6 +704,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const folderName = inputNewFolder.value.trim();
         if (folderName && currentBrowserPath) socket.emit('fs.createDir', { parentPath: currentBrowserPath, folderName });
     });
+
+    // --- Authentication Verification Logic --- //
+    socket.on('auth.checkStatus.response', (status) => {
+        const geminiStatus = document.querySelector('#btn-login-gemini .auth-status');
+        const claudeStatus = document.querySelector('#btn-login-claude .auth-status');
+        const githubStatus = document.querySelector('#btn-login-github .auth-status');
+
+        if (geminiStatus) geminiStatus.style.display = status.gemini ? 'inline' : 'none';
+        if (claudeStatus) claudeStatus.style.display = status.claude ? 'inline' : 'none';
+        if (githubStatus) githubStatus.style.display = status.github ? 'inline' : 'none';
+    });
+
+    // Login listeners
+    document.getElementById('btn-login-gemini').addEventListener('click', () => {
+        socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'gemini login\r' });
+        settingsModal.classList.remove('active');
+        const active = terminals.get(activeTabId);
+        if (active) active.term.focus();
+    });
+
+    document.getElementById('btn-login-claude').addEventListener('click', () => {
+        socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'claude auth\r' });
+        settingsModal.classList.remove('active');
+        const active = terminals.get(activeTabId);
+        if (active) active.term.focus();
+    });
+
+    document.getElementById('btn-login-github').addEventListener('click', () => {
+        socket.emit('terminal.toTerm', { tabId: activeTabId, data: 'gh auth login\r' });
+        settingsModal.classList.remove('active');
+        const active = terminals.get(activeTabId);
+        if (active) active.term.focus();
+    });
+
+    const btnRestartTerm = document.getElementById('btn-restart-term');
+    if (btnRestartTerm) {
+        btnRestartTerm.addEventListener('click', () => {
+            socket.emit('terminal.restart', activeTabId);
+            settingsModal.classList.remove('active');
+        });
+    }
 
     socket.on('fs.createDir.response', (data) => {
         if (data.success) {
@@ -1182,8 +1248,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Agent Management Logic ---
     const agentModal = document.getElementById('agent-modal');
-    const agentsListEl = document.getElementById('agents-list');
-    const btnAddAgent = document.getElementById('btn-add-agent');
+    const agentsListSettings = document.getElementById('settings-agents-list');
+    const agentsListSidebar = document.getElementById('agents-list');
+
+    const btnAddAgentSettings = document.getElementById('btn-settings-add-agent');
+    const btnAddAgentSidebar = document.getElementById('btn-add-agent');
+
     const btnCloseAgent = document.getElementById('btn-close-agent');
     const btnSaveAgent = document.getElementById('btn-save-agent');
 
@@ -1216,9 +1286,8 @@ document.addEventListener('DOMContentLoaded', () => {
         agentModal.classList.add('active');
     };
 
-    btnAddAgent.onclick = () => {
-        openAgentModal();
-    };
+    if (btnAddAgentSettings) btnAddAgentSettings.onclick = () => openAgentModal();
+    if (btnAddAgentSidebar) btnAddAgentSidebar.onclick = () => openAgentModal();
 
     btnCloseAgent.onclick = () => {
         agentModal.classList.remove('active');
@@ -1252,43 +1321,47 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('agents.list.response', (agents) => {
-        agentsListEl.innerHTML = '';
-        agents.forEach(agent => {
-            const div = document.createElement('div');
-            div.className = 'agent-item';
-            div.innerHTML = `
-                <div class="agent-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2Z"/><path d="M12 12 2.1 12.1"/><path d="m4.5 9 1.4 1.4"/><path d="M12 12V2a10 10 0 0 0-8.7 5.5"/></svg>
-                </div>
-                <div class="agent-info">
-                    <span class="agent-name">${agent.name}</span>
-                    <span class="agent-model">${agent.model}</span>
-                </div>
-                <div class="agent-actions">
-                    <button class="agent-edit-btn icon-btn" title="Edit Agent">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="agent-delete-btn icon-btn" title="Delete Agent">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    </button>
-                </div>
-            `;
+        const containers = [agentsListSettings, agentsListSidebar].filter(c => c !== null);
 
-            div.onclick = (e) => {
-                if (e.target.closest('.agent-delete-btn')) {
-                    if (confirm(`Are you sure you want to delete "${agent.name}"?`)) {
-                        socket.emit('agents.delete', agent.name);
+        containers.forEach(container => {
+            container.innerHTML = '';
+            agents.forEach(agent => {
+                const div = document.createElement('div');
+                div.className = 'agent-item';
+                div.innerHTML = `
+                    <div class="agent-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2Z"/><path d="M12 12 2.1 12.1"/><path d="m4.5 9 1.4 1.4"/><path d="M12 12V2a10 10 0 0 0-8.7 5.5"/></svg>
+                    </div>
+                    <div class="agent-info">
+                        <span class="agent-name">${agent.name}</span>
+                        <span class="agent-model">${agent.model || 'Auto'}</span>
+                    </div>
+                    <div class="agent-actions">
+                        <button class="agent-edit-btn icon-btn" title="Edit Agent">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="agent-delete-btn icon-btn" title="Delete Agent">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                `;
+
+                div.onclick = (e) => {
+                    if (e.target.closest('.agent-delete-btn')) {
+                        if (confirm(`Are you sure you want to delete "${agent.name}"?`)) {
+                            socket.emit('agents.delete', agent.name);
+                        }
+                        return;
                     }
-                    return;
-                }
-                if (e.target.closest('.agent-edit-btn')) {
-                    openAgentModal(agent);
-                    return;
-                }
-                launchAgent(agent);
-            };
+                    if (e.target.closest('.agent-edit-btn')) {
+                        openAgentModal(agent);
+                        return;
+                    }
+                    launchAgent(agent);
+                };
 
-            agentsListEl.appendChild(div);
+                container.appendChild(div);
+            });
         });
     });
 
@@ -1306,17 +1379,30 @@ document.addEventListener('DOMContentLoaded', () => {
         createTerminalInstance(id, title);
         switchTab(id);
 
-        const aiName = agent.model === 'claude' ? 'claude' : 'gemini';
-        const modelArg = (agent.model && agent.model !== '' && agent.model !== 'claude') ? ` -m ${agent.model}` : '';
-        const activeSelect = document.getElementById('active-workspace-select');
-        const activeWs = activeSelect && activeSelect.value ? activeSelect.value : '';
-        const path = activeWs || assignedPaths[aiName];
+        let launchCmd = '';
+        let targetPath = '';
+
+        if (agent.model && agent.model.startsWith('ollama:')) {
+            const pureModel = agent.model.substring(7);
+            launchCmd = `ollama run ${pureModel}\r`;
+            // Ollama defaults to standard workspace usually
+            const activeSelect = document.getElementById('active-workspace-select');
+            targetPath = activeSelect && activeSelect.value ? activeSelect.value : '';
+        } else {
+            const aiName = agent.model === 'claude' ? 'claude' : 'gemini';
+            const modelArg = (agent.model && agent.model !== '' && agent.model !== 'claude') ? ` -m ${agent.model}` : '';
+            launchCmd = `${aiName}${modelArg}\r`;
+
+            const activeSelect = document.getElementById('active-workspace-select');
+            const activeWs = activeSelect && activeSelect.value ? activeSelect.value : '';
+            targetPath = activeWs || assignedPaths[aiName];
+        }
 
         setTimeout(() => {
-            if (path) {
-                socket.emit('terminal.toTerm', { tabId: id, data: `cd "${path}"\r` });
+            if (targetPath) {
+                socket.emit('terminal.toTerm', { tabId: id, data: `cd "${targetPath}"\r` });
                 setTimeout(() => {
-                    socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}${modelArg}\r` });
+                    socket.emit('terminal.toTerm', { tabId: id, data: launchCmd });
                     // Prime with system prompt
                     setTimeout(() => {
                         const primeCmd = `System Instruction: ${agent.prompt}\r`;
@@ -1324,7 +1410,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 2000);
                 }, 200);
             } else {
-                socket.emit('terminal.toTerm', { tabId: id, data: `${aiName}${modelArg}\r` });
+                socket.emit('terminal.toTerm', { tabId: id, data: launchCmd });
                 // Prime with system prompt
                 setTimeout(() => {
                     const primeCmd = `System Instruction: ${agent.prompt}\r`;

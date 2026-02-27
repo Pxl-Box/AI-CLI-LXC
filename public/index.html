@@ -264,6 +264,8 @@
                     <button class="action-btn small danger settings-tab-btn" data-tab="settings-git"
                         style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Import
                         &amp; Git</button>
+                    <button class="action-btn small danger settings-tab-btn" data-tab="settings-agents"
+                        style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Agents</button>
                     <button class="action-btn small danger settings-tab-btn" data-tab="settings-localai"
                         style="text-align: left; justify-content: flex-start; color: var(--text-muted); border-color: transparent;">Local
                         AIs</button>
@@ -278,13 +280,26 @@
                         <div class="form-group">
                             <label>Authentication Logins</label>
                             <p class="help-text">Authenticate AI extensions and tools natively using the terminal.</p>
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                <button class="action-btn small primary" id="btn-login-gemini">Login to Gemini
-                                    CLI</button>
-                                <button class="action-btn small secondary" id="btn-login-claude">Login to Claude
-                                    Code</button>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;"
+                                id="auth-buttons-container">
+                                <button class="action-btn small primary" id="btn-login-gemini"
+                                    style="display: flex; justify-content: space-between;">
+                                    <span>Login to Gemini CLI</span>
+                                    <span class="auth-status" style="display:none; color: #10b981; font-weight: bold;">✓
+                                        Linked</span>
+                                </button>
+                                <button class="action-btn small secondary" id="btn-login-claude"
+                                    style="display: flex; justify-content: space-between;">
+                                    <span>Login to Claude Code</span>
+                                    <span class="auth-status" style="display:none; color: #10b981; font-weight: bold;">✓
+                                        Linked</span>
+                                </button>
                                 <button class="action-btn small" id="btn-login-github"
-                                    style="background: rgba(255,255,255,0.1);">Login to GitHub</button>
+                                    style="background: rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
+                                    <span>Login to GitHub</span>
+                                    <span class="auth-status" style="display:none; color: #10b981; font-weight: bold;">✓
+                                        Linked</span>
+                                </button>
                             </div>
                         </div>
 
@@ -487,6 +502,25 @@
                                     style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary); font-family: 'Fira Code', monospace; font-size: 0.8rem; outline: none;">
                                 <button class="action-btn primary" id="btn-git-clone"
                                     style="width: auto; padding: 0 1rem; flex-shrink: 0;">Clone</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agents Tab -->
+                    <div id="settings-agents" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1.5rem;">
+                        <div class="form-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label style="margin: 0;">Manage Custom Agents</label>
+                                <button class="action-btn small primary" id="btn-settings-add-agent"
+                                    title="Create New Agent">+ Create Agent</button>
+                            </div>
+                            <p class="help-text">Create and manage your custom AI personas.</p>
+                            <div id="settings-agents-list"
+                                style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                                <!-- AI agents injected via JS -->
+                                <div class="help-text" style="font-style: italic;">Loading agents...</div>
                             </div>
                         </div>
                     </div>

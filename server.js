@@ -346,6 +346,42 @@ io.on('connection', (socket) => {
         });
     });
 
+    // --- Auth Verification ---
+    socket.on('auth.checkStatus', () => {
+        const { exec } = require('child_process');
+        const userProfile = process.env.HOME || process.env.USERPROFILE;
+        const results = {
+            github: false,
+            claude: false,
+            gemini: false
+        };
+
+        // 1. Check GitHub (Check hosts.yml existence)
+        const ghPath = path.join(userProfile, '.config', 'gh', 'hosts.yml');
+        if (fs.existsSync(ghPath)) {
+            results.github = true;
+        }
+
+        // 2. Check Claude (Check .claude.json or anthropic config)
+        const claudePath = path.join(userProfile, '.claude.json');
+        const anthropicPath = path.join(userProfile, '.anthropic');
+        if (fs.existsSync(claudePath) || fs.existsSync(anthropicPath)) {
+            results.claude = true;
+        }
+
+        // 3. Check Gemini
+        const geminiCredsPath = path.join(userProfile, '.gemini', 'credentials');
+        const googleConfigPath = path.join(userProfile, '.config', 'google-genai');
+        if (fs.existsSync(geminiCredsPath) || fs.existsSync(googleConfigPath)) {
+            results.gemini = true;
+        }
+
+        // We can do a quick async check for gh auth status just in case the file config didn't work.
+        // We'll return the immediate file-based results first to make the UI snappy, then maybe 
+        // they can be enhanced later.
+        socket.emit('auth.checkStatus.response', results);
+    });
+
     // --- Ollama Model Management ---
     socket.on('ollama.rmModel', (modelName) => {
         const { exec } = require('child_process');
