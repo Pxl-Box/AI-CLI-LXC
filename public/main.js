@@ -106,10 +106,65 @@ document.addEventListener('DOMContentLoaded', () => {
         const fitAddon = new window.FitAddon.FitAddon();
         term.loadAddon(fitAddon);
 
-        const webLinksAddon = new window.WebLinksAddon.WebLinksAddon((event, uri) => {
-            window.open(uri, '_blank');
-        });
-        term.loadAddon(webLinksAddon);
+        class MultiLineLinkProvider {
+            constructor(term) {
+                this.term = term;
+            }
+
+            provideLinks(bufferLineNumber, callback) {
+                const links = [];
+                const buffer = this.term.buffer.active;
+
+                // Scan up to 3 lines up and 3 lines down from the hovered line to catch long wrapped URLs
+                const startLine = Math.max(0, bufferLineNumber - 1 - 3);
+                const endLine = Math.min(buffer.length - 1, bufferLineNumber - 1 + 3);
+
+                let text = "";
+                let positions = [];
+
+                for (let i = startLine; i <= endLine; i++) {
+                    const line = buffer.getLine(i);
+                    if (!line) continue;
+
+                    const str = line.translateToString(true);
+                    for (let c = 0; c < str.length; c++) {
+                        text += str[c];
+                        positions.push({ x: c + 1, y: i + 1 });
+                    }
+                }
+
+                // Relaxed regex to capture complex Auth URLs
+                const urlRegex = /https?:\/\/[^\s"'<>]+/gi;
+                let match;
+                while ((match = urlRegex.exec(text)) !== null) {
+                    const url = match[0];
+                    const startIdx = match.index;
+                    const endIdx = match.index + url.length - 1;
+
+                    const startPos = positions[startIdx];
+                    const endPos = positions[endIdx];
+
+                    let intersects = false;
+                    for (let i = startIdx; i <= endIdx; i++) {
+                        if (positions[i].y === bufferLineNumber) {
+                            intersects = true;
+                            break;
+                        }
+                    }
+
+                    if (intersects) {
+                        links.push({
+                            range: { start: startPos, end: endPos },
+                            text: url,
+                            activate: (e, text) => { window.open(url, '_blank'); }
+                        });
+                    }
+                }
+                callback(links);
+            }
+        }
+
+        term.registerLinkProvider(new MultiLineLinkProvider(term));
 
         term.open(termEl);
 

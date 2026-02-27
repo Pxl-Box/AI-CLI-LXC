@@ -71,32 +71,26 @@
                             <polyline points="7 3 7 8 15 8" />
                         </svg>
                     </button>
-                    <button id="btn-clear" class="icon-btn" title="Clear Terminal">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 6h18" />
-                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                            <line x1="10" x2="10" y1="11" y2="17" />
-                            <line x1="14" x2="14" y1="11" y2="17" />
-                        </svg>
-                    </button>
+
                     <input type="file" id="input-upload" style="display: none;" multiple>
                 </div>
             </div>
 
             <nav class="quick-actions">
+                <!-- Active Workspace Picker (always visible) -->
+                <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.25rem;">
+                    <label
+                        style="font-size: 0.70rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Active
+                        Workspace</label>
+                    <select id="active-workspace-select" class="model-select">
+                        <option value="">Default (~)</option>
+                    </select>
+                </div>
+
                 <details open>
                     <summary>Launchers</summary>
                     <div class="section-content">
                         <div class="launcher-group">
-                            <label
-                                style="font-size: 0.70rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Active
-                                Workspace</label>
-                            <select id="active-workspace-select" class="model-select" style="margin-bottom: 0.75rem;">
-                                <option value="">Default (~)</option>
-                            </select>
-
                             <select id="gemini-model-select" class="model-select">
                                 <option value="">Auto (Gemini 3)</option>
                                 <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Preview)</option>
@@ -305,55 +299,19 @@
 
                     <!-- Workspace Explorer Tab -->
                     <div id="settings-explorer" class="settings-tab-pane"
-                        style="display: none; flex-direction: column; gap: 1.5rem;">
-                        <div class="form-group workspace-assignments">
-                            <h4>Current Assignments</h4>
-                            <div class="assignment-row">
-                                <span class="model-badge gemini">Gemini</span>
-                                <input type="text" id="input-gemini-path" readonly placeholder="Default Workspace (~) ">
-                                <button class="action-btn small primary" id="btn-assign-gemini">Assign Focus</button>
-                            </div>
-                            <div class="assignment-row">
-                                <span class="model-badge claude">Claude</span>
-                                <input type="text" id="input-claude-path" readonly placeholder="Default Workspace (~)">
-                                <button class="action-btn small secondary" id="btn-assign-claude">Assign Focus</button>
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                            <label>Asset Storage Path</label>
-                            <p class="help-text">Where uploaded files are stored. Defaults to active workspace.</p>
-                            <div class="assignment-row">
-                                <input type="text" id="input-asset-path" readonly placeholder="Same as Workspace">
-                                <button class="action-btn small secondary" id="btn-assign-asset">Set Storage</button>
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                            <label>Generated Content Path</label>
-                            <p class="help-text">Where AI-generated output files are saved if not in an active project.
-                            </p>
-                            <div class="assignment-row">
-                                <input type="text" id="input-generated-path" readonly placeholder="Same as Workspace">
-                                <button class="action-btn small secondary" id="btn-assign-generated">Set Path</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Saved Projects Tab -->
-                    <div id="settings-projects" class="settings-tab-pane"
-                        style="display: none; flex-direction: column; gap: 1.5rem;">
-                        <div class="form-group">
-                            <label>Workspace Explorer</label>
-                            <p class="help-text">Click folders to browse. Create or save paths here.</p>
-                            <div class="browser-container">
+                        style="display: none; flex-direction: column; gap: 1rem;">
+                        <!-- Inline File Browser -->
+                        <div class="form-group" style="margin: 0;">
+                            <label>Browse Directories</label>
+                            <p class="help-text">Navigate to a folder, then assign it below.</p>
+                            <div class="browser-container" style="margin-top: 0.5rem;">
                                 <div class="browser-header">
-                                    <button id="btn-up-dir" class="action-btn small secondary"
-                                        title="Go Up One Directory">↑ Up</button>
+                                    <button id="btn-up-dir" class="action-btn small secondary" title="Go Up">↑
+                                        Up</button>
                                     <input type="text" id="input-browser-path" class="browser-path-input" readonly
                                         autocomplete="off">
                                 </div>
-                                <div class="browser-list" id="browser-list"></div>
+                                <div class="browser-list" id="browser-list" style="height: 180px;"></div>
                                 <div class="browser-actions">
                                     <input type="text" id="input-new-folder" placeholder="New folder name..."
                                         autocomplete="off">
@@ -362,41 +320,68 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <h4>Saved Projects</h4>
-                                <button class="action-btn small primary" id="btn-save-project"
-                                    title="Save current explorer path as a project">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" style="margin-right: 4px;">
-                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                        <polyline points="17 21 17 13 7 13 7 21" />
-                                        <polyline points="7 3 7 8 15 8" />
-                                    </svg>
-                                    Save Current Path
-                                </button>
+                        <!-- Assignments -->
+                        <div class="form-group workspace-assignments"
+                            style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Path Assignments</h4>
+                            <div class="assignment-row">
+                                <span class="model-badge gemini">Gemini</span>
+                                <input type="text" id="input-gemini-path" readonly placeholder="Default (~)">
+                                <button class="action-btn small primary" id="btn-assign-gemini">Assign</button>
                             </div>
-                            <p class="help-text" style="margin-bottom: 1rem;">Save frequently used workspace paths for
-                                quick assignment.</p>
-                            <div id="saved-projects-list"
-                                style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;">
-                                <!-- Saved projects inject here -->
+                            <div class="assignment-row">
+                                <span class="model-badge claude">Claude</span>
+                                <input type="text" id="input-claude-path" readonly placeholder="Default (~)">
+                                <button class="action-btn small secondary" id="btn-assign-claude">Assign</button>
                             </div>
+                            <div class="assignment-row" style="margin-top: 0.5rem;">
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-muted); min-width: 55px;">Assets</span>
+                                <input type="text" id="input-asset-path" readonly placeholder="Same as workspace">
+                                <button class="action-btn small secondary" id="btn-assign-asset">Set</button>
+                            </div>
+                            <div class="assignment-row">
+                                <span
+                                    style="font-size: 0.75rem; color: var(--text-muted); min-width: 55px;">Output</span>
+                                <input type="text" id="input-generated-path" readonly placeholder="Same as workspace">
+                                <button class="action-btn small secondary" id="btn-assign-generated">Set</button>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div
-                                style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color);">
-                                <label
-                                    style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Active
-                                    Workspace</label>
-                                <select id="settings-active-workspace-select" class="model-select">
-                                    <option value="">Default (~)</option>
-                                    <!-- Injected via JS -->
-                                </select>
-                                <p class="help-text" style="margin-top: 0.5rem; font-size: 0.75rem;">Select your active
-                                    workspace here to apply it to all models.</p>
+                    <!-- Saved Projects Tab -->
+                    <div id="settings-projects" class="settings-tab-pane"
+                        style="display: none; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <label>Saved Projects</label>
+                                <p class="help-text" style="margin: 0;">Bookmarked workspace paths.</p>
                             </div>
+                            <button class="action-btn small primary" id="btn-save-project"
+                                title="Save current browsed path as a project">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" style="margin-right: 4px;">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <polyline points="17 21 17 13 7 13 7 21" />
+                                    <polyline points="7 3 7 8 15 8" />
+                                </svg>
+                                Save Current Path
+                            </button>
+                        </div>
+
+                        <div id="saved-projects-list"
+                            style="display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; max-height: 280px;">
+                            <!-- Saved projects inject here -->
+                        </div>
+
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <label
+                                style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Active
+                                Workspace (applies to all models)</label>
+                            <select id="settings-active-workspace-select" class="model-select">
+                                <option value="">Default (~)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -494,17 +479,18 @@
 
     <!-- Workspace Explorer Modal -->
     <div class="modal-overlay" id="generated-modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 680px; width: 95vw;">
             <div class="modal-header">
                 <h3>Workspace Explorer</h3>
                 <button class="close-btn" id="btn-close-generated">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="browser-header"
-                    style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <button id="btn-explorer-up" class="action-btn small secondary" style="padding: 0.4rem 0.8rem;">↑
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Nav row: up + mkdir + current path -->
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="btn-explorer-up" class="action-btn small secondary" style="flex-shrink: 0;">↑
                         Up</button>
-                    <button id="btn-explorer-mkdir" class="icon-btn" title="Create New Folder" style="padding: 0.4rem;">
+                    <button id="btn-explorer-mkdir" class="icon-btn" title="Create New Folder"
+                        style="flex-shrink: 0; padding: 0.4rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path
@@ -513,21 +499,24 @@
                             <line x1="9" y1="13" x2="15" y2="13" />
                         </svg>
                     </button>
-                    <span id="explorer-current-path" class="help-text"
-                        style="margin: 0; padding-left: 0.5rem; font-family: 'Fira Code', monospace; font-size: 0.75rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">/</span>
+                    <span id="explorer-current-path"
+                        style="font-family: 'Fira Code', monospace; font-size: 0.75rem; color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">/</span>
                 </div>
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <input type="text" id="input-explorer-search" placeholder="Search files in current folder..."
-                        style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;"
-                        autocomplete="off">
-                </div>
-                <div class="browser-list" id="generated-list" style="height: 300px;">
+                <!-- Search -->
+                <input type="text" id="input-explorer-search" placeholder="Search files in current folder..."
+                    style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;"
+                    autocomplete="off">
+                <!-- File list -->
+                <div class="browser-list" id="generated-list"
+                    style="min-height: 260px; max-height: 340px; overflow-y: auto;">
                     <!-- Files and Folders inject here -->
                 </div>
-                <div class="modal-footer"
-                    style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <div id="explorer-selection-count" class="help-text" style="margin: 0;">0 files selected</div>
-                    <div style="display: flex; gap: 0.5rem;">
+                <!-- Footer row -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+                    <div id="explorer-selection-count" style="font-size: 0.8rem; color: var(--text-secondary);">0 files
+                        selected</div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="action-btn small secondary" id="btn-gather-context"
                             title="Auto-select architectural files">Gather Context</button>
                         <button class="action-btn small secondary" id="btn-mention-selected" disabled>Mention
