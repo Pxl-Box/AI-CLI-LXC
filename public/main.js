@@ -318,8 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const active = terminals.get(activeTabId);
         if (active) {
             active.term.clear();
-            // Send Ctrl+L to trigger a prompt redraw in the underlying shell/REPL
-            socket.emit("terminal.toTerm", { tabId: activeTabId, data: "\x0c" });
+            const activeTabEl = document.querySelector('.tab.active .tab-title');
+            const title = activeTabEl ? activeTabEl.textContent.toLowerCase() : '';
+            
+            // If it's an AI CLI, use /clear, otherwise use standard clear
+            const clearCmd = (title.includes('gemini') || title.includes('claude')) ? '/clear' : 'clear';
+            
+            // Send command with both \r and \n to ensure execution across different shells/REPLs
+            socket.emit("terminal.toTerm", { tabId: activeTabId, data: clearCmd + "\r\n" });
             active.term.focus();
         }
     });
