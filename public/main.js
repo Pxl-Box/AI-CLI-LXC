@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('fs.createDir.response', (data) => {
         if (data.success) {
             inputNewFolder.value = '';
-            loadDirectory(currentBrowserPath);
+            loadDirectory(data.newPath); // Navigate to the newly created folder
             // Also refresh explorer if it's open
             if (generatedModal.classList.contains('active')) {
                 openExplorer(explorerCurrentPath);
