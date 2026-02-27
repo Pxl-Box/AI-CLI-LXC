@@ -45,10 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let secondaryTabId = null;
 
     // --- Tab Management State ---
-    const terminals = new Map(); // tabId -> { term, fitAddon, element }
+    const terminals = new Map(); // tabId -> { term, fitAddon, element, workspace }
     let activeTabId = 'default';
 
-    const createTerminalInstance = (tabId, title = 'Terminal') => {
+    // --- Workspace & Project Management --- //
+    const assignedPaths = {
+        gemini: localStorage.getItem('ai-workspace-gemini') || '',
+        claude: localStorage.getItem('ai-workspace-claude') || ''
+    };
+
+    const getActiveWorkspace = () => {
+        const select1 = document.getElementById('active-workspace-select');
+        const select2 = document.getElementById('settings-active-workspace-select');
+        const select3 = document.getElementById('saved-projects-list');
+        return (select1 && select1.value) || (select2 && select2.value) || (select3 && select3.value) || localStorage.getItem('ai-active-workspace') || '';
+    };
+
+    let savedProjects = [];
+    const loadSavedProjects = () => {
+        const stored = localStorage.getItem('ai-saved-projects');
+        if (stored) {
+            try { savedProjects = JSON.parse(stored); } catch (e) { savedProjects = []; }
+        }
+        renderSavedProjects();
+    };
+
+    const createTerminalInstance = (tabId, title = 'Terminal', workspace = null) => {
         // Create UI for Tab
         const tabEl = document.createElement('div');
         tabEl.className = `tab ${tabId === activeTabId ? 'active' : ''}`;
@@ -169,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
         term.open(termEl);
 
         // Store instance
-        terminals.set(tabId, { term, fitAddon, element: termWrapper, tabEl });
+        const ws = workspace || getActiveWorkspace() || '';
+        terminals.set(tabId, { term, fitAddon, element: termWrapper, tabEl, workspace: ws });
         if (typeof saveTabState === 'function') saveTabState();
 
         // Handle events
@@ -219,7 +242,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         refreshTerminalLayout();
         const active = terminals.get(activeTabId);
-        if (active) active.term.focus();
+        if (active) {
+            active.term.focus();
+
+            // Sync workspace dropdowns to this tab's workspace
+            const activeWsSelect = document.getElementById('active-workspace-select');
+            const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
+            const savedProjectsListEl = document.getElementById('saved-projects-list');
+
+            const ws = active.workspace || '';
+            if (activeWsSelect) activeWsSelect.value = ws;
+            if (settingsActiveWsSelect) settingsActiveWsSelect.value = ws;
+            if (savedProjectsListEl) savedProjectsListEl.value = ws;
+            localStorage.setItem('ai-active-workspace', ws);
+        }
     };
 
     btnSplitView.onclick = () => {
@@ -333,14 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Quick Action Buttons --- //
-    const assignedPaths = {
-        gemini: localStorage.getItem('ai-workspace-gemini') || '',
-        claude: localStorage.getItem('ai-workspace-claude') || ''
-    };
-
-    if (assignedPaths.gemini) document.getElementById('input-gemini-path').value = assignedPaths.gemini;
-    if (assignedPaths.claude) document.getElementById('input-claude-path').value = assignedPaths.claude;
-
     const sendCommand = (cmd) => {
         socket.emit("terminal.toTerm", { tabId: activeTabId, data: cmd + "\r" });
         const active = terminals.get(activeTabId);
@@ -379,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = model ? `${baseTitle} (${model})` : baseTitle;
 
         socket.emit('terminal.createTab', id);
-        const term = createTerminalInstance(id, title);
+        const term = createTerminalInstance(id, title, path);
         switchTab(id);
 
         setTimeout(() => {
@@ -392,13 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 socket.emit('terminal.toTerm', { tabId: id, data: cmd });
             }
         }, 500);
-    };
-
-    // Helper to get active workspace from dropdowns
-    const getActiveWorkspace = () => {
-        const select1 = document.getElementById('active-workspace-select');
-        const select2 = document.getElementById('settings-active-workspace-select');
-        return (select1 && select1.value) || (select2 && select2.value) || null;
     };
 
     document.getElementById('btn-gemini').addEventListener('click', () => {
@@ -764,62 +785,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input-claude-path').value = currentBrowserPath;
     });
 
-    // --- Saved Projects Logic --- //
-    const savedProjectsListEl = document.getElementById('saved-projects-list');
-    let savedProjects = [];
-
-    const loadSavedProjects = () => {
-        const stored = localStorage.getItem('ai-saved-projects');
-        if (stored) {
-            try {
-                savedProjects = JSON.parse(stored);
-            } catch (e) {
-                savedProjects = [];
-            }
-        }
-        renderSavedProjects();
-    };
-
-    const saveSavedProjects = () => {
-        localStorage.setItem('ai-saved-projects', JSON.stringify(savedProjects));
-        renderSavedProjects();
-    };
-
-    const renderSavedProjects = () => {
-        const sel = document.getElementById('saved-projects-list');
-        if (!sel) return;
-
-        // Populate projects dropdown
-        sel.innerHTML = savedProjects.length === 0
-            ? '<option value="">-- no projects saved --</option>'
-            : savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
-
-        // Sync active workspace dropdowns
-        const activeWsSelect = document.getElementById('active-workspace-select');
-        const settingsActiveWsSelect = document.getElementById('settings-active-workspace-select');
-        [activeWsSelect, settingsActiveWsSelect].forEach(selectEl => {
-            if (!selectEl) return;
-            const currentSelection = selectEl.value;
-            selectEl.innerHTML = '<option value="">Default (~)</option>' +
-                savedProjects.map(p => `<option value="${p.path}">${p.name}</option>`).join('');
-            if (currentSelection && savedProjects.find(p => p.path === currentSelection)) {
-                selectEl.value = currentSelection;
-            }
-            selectEl.addEventListener('change', (e) => {
-                const targetWorkspace = e.target.value;
-                if (activeWsSelect && activeWsSelect !== e.target) activeWsSelect.value = targetWorkspace;
-                if (settingsActiveWsSelect && settingsActiveWsSelect !== e.target) settingsActiveWsSelect.value = targetWorkspace;
-
-                // Automatically ensure an 'assets' folder exists in the selected workspace
-                if (targetWorkspace) {
-                    socket.emit('fs.createDir', { parentPath: targetWorkspace, folderName: 'assets' });
-                    // Also update terminal CWD for all terminals? Or just active one?
-                    // socket.emit('terminal.changeCwd', targetWorkspace); 
-                }
-            });
-        });
-    };
-
     const btnSaveProject = document.getElementById('btn-save-project');
     if (btnSaveProject) {
         btnSaveProject.addEventListener('click', () => {
@@ -839,7 +804,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnLoadProject) {
         btnLoadProject.addEventListener('click', () => {
             const sel = document.getElementById('saved-projects-list');
-            if (sel && sel.value) loadDirectory(sel.value);
+            if (sel && sel.value) {
+                loadDirectory(sel.value);
+                // Also set as active workspace and sync dropdowns
+                handleWorkspaceChange({ target: sel });
+            }
         });
     }
 
@@ -1371,10 +1340,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = `agent-${Math.random().toString(36).substr(2, 5)}`;
         const title = agent.name;
 
-        socket.emit('terminal.createTab', id);
-        createTerminalInstance(id, title);
-        switchTab(id);
-
         let launchCmd = '';
         let targetPath = '';
 
@@ -1393,6 +1358,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeWs = activeSelect && activeSelect.value ? activeSelect.value : '';
             targetPath = activeWs || assignedPaths[aiName];
         }
+
+        socket.emit('terminal.createTab', id);
+        createTerminalInstance(id, title, targetPath);
+        switchTab(id);
 
         setTimeout(() => {
             if (targetPath) {
